@@ -39,13 +39,22 @@ private:
 
 	Piece parseLetterToPiece(char c);
 
+	bool LegalRookMove(int start, int end);
+	bool LegalBishopMove(int start, int end);
+
 public:
+	// returns -1 if the space we're trying to move to is off the board
+	static int moveFromPos(int pos, int x, int y);
+
 	std::array<Piece, BOARD_LEN * BOARD_LEN> getState() const;
 	std::array<bool, 4> getCastlingRights() const;
 	PieceColor getTurn() const;
 	int getEnPassantTarget() const;
 
+	bool isSpaceEmpty(int ind) const;
+
 	Board(std::string fen);
+	Board() = default;
 	bool IsMoveLegal(Move move);
 	void MakeMove(Move move);
 	// reverses the last move made

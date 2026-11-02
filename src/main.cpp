@@ -4,32 +4,67 @@
 #include "game/move.hpp"
 #include "game/board.hpp"
 
+bool dogame = true;
+
+Board gameBoard;
+
+void playGame()
+{
+	bool whiteKing = false;
+	bool blackKing = false;
+	std::array<Piece, BOARD_SIZE> state = gameBoard.getState();
+	for (int i = 0; i < BOARD_SIZE; i++)
+	{
+		if (state[i].type() != King)
+			continue;
+		if (state[i].color() == White)
+			whiteKing = true;
+		if (state[i].color() == Black)
+			blackKing = true;
+	}
+	if (!whiteKing)
+	{
+		std::cout << "Black wins!" << std::endl;
+		return;
+	}
+	else if (!blackKing)
+	{
+		std::cout << "White wins!" << std::endl;
+		return;
+	}
+
+	std::cout << gameBoard.ToString();
+	std::cout << "\n\n"
+			  << (gameBoard.getTurn() == White ? "White" : "Black") << " to move" << std::endl;
+	std::cout << "Enter your move: (UCI format, 'exit' to stop)" << std::endl;
+	std::string userMove;
+	std::cin >> userMove;
+	try
+	{
+		if (userMove == "exit")
+			return;
+		Move move = Move(userMove);
+		gameBoard.MakeMove(move);
+	}
+	catch (const char *msg)
+	{
+	}
+	playGame();
+}
+
+void startGame()
+{
+	gameBoard = Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	playGame();
+}
+
 int main()
 {
-	std::cout << "Hello, world!" << std::endl;
-	std::cout << "Heller, world!" << std::endl;
+	if (dogame)
+	{
+		startGame();
+		return 0;
+	}
 
-	// basic piece testing
-	Piece piece = Piece(King, Black);
-
-	// primtive move testing
-	Move awesomeMove = Move("e2e4");
-	std::cout << "move from " << Move::indToSquare(awesomeMove.getStart()) << " to " << Move::indToSquare(awesomeMove.getEnd()) << std::endl;
-
-	// primtive board testing
-	std::string startingFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	Board board = Board(startingFen);
-	std::cout << "starting pos" << std::endl;
-	std::cout << board.ToString() << std::endl;
-
-	board.MakeMove(Move("e2e4"));
-	std::cout << "after move" << std::endl;
-	std::cout << board.ToString() << std::endl;
-
-	board.MakeMove(Move("a1a3"));
-	board.MakeMove(Move("a3e5"));
-	board.MakeMove(Move("b1e4"));
-	std::cout << "after move(s)" << std::endl;
-	std::cout << board.ToString() << std::endl;
 	return 0;
 }

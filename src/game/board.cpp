@@ -34,7 +34,6 @@ Board::Board(std::string fen)
 
 	// field 0: board state
 	int ind = 56;
-	std::cout << "field 0 " << fields[0] << std::endl;
 	for (auto cur : fields[0])
 	{
 		if (cur == '/')
@@ -98,41 +97,149 @@ int Board::getEnPassantTarget() const
 	return enPassantTarget;
 }
 
+bool Board::isSpaceEmpty(int ind) const
+{
+	return state[ind].type() == None;
+}
+
+int Board::moveFromPos(int start, int x, int y)
+{
+	int rank = start / 8 + y;
+	int file = start % 8 + x;
+	if (file < 0 || file >= BOARD_LEN || rank < 0 || rank > BOARD_LEN)
+		return -1;
+	return start + y * 8 + x;
+}
+
+// FIXME: these two share a lot of code, surely there's some way to bring them together
+bool Board::LegalBishopMove(int start, int end)
+{
+	int x = (end % 8) - (start % 8);
+	int y = (end / 8) - (start / 8);
+	if (abs(x) != abs(y))
+		return false;
+
+	int dx = x / abs(x);
+	int dy = y / abs(y);
+	// std::cout << start << " " << end << std::endl;
+	// std::cout << x << " " << y << " " << dx << " " << dy << std::endl;
+	int pos = start;
+	while (pos != end - dx - dy * 8)
+	{
+		pos += dx + dy * 8;
+		// std::cout << "searched " << pos << std::endl;
+		if (!isSpaceEmpty(pos))
+			return false;
+	}
+	return true;
+}
+
+bool Board::LegalRookMove(int start, int end)
+{
+	int x = (end % 8) - (start % 8);
+	int y = (end / 8) - (start / 8);
+	if (x != 0 && y != 0)
+		return false;
+
+	int dx = x != 0 ? (x / abs(x)) : 0;
+	int dy = y != 0 ? (y / abs(y)) : 0;
+	int pos = start;
+
+	while (pos != end - dx - dy * 8)
+	{
+		pos += dx + dy * 8;
+		if (!isSpaceEmpty(pos))
+			return false;
+	}
+	return true;
+}
+
 bool Board::IsMoveLegal(Move move)
 {
+	// start and end are guarenteed [0, 64)
 	int start = move.getStart();
 	int end = move.getEnd();
 	Piece movingPiece = state[move.getStart()];
 	Piece capturedPiece = state[move.getEnd()];
 
-	return true;
-
-	if (movingPiece.type() == None || movingPiece.color() != turn)
+	if (movingPiece.type() == None)
+		std::cout << "attempted to move piece of None" << std::endl;
+	if (movingPiece.color() != turn)
+		std::cout << "attempted to move on the wrong color turn" << std::endl;
+	if (capturedPiece.color() == movingPiece.color())
+		std::cout << "attempted to capture own piece" << std::endl;
+	if (start == end || movingPiece.type() == None || movingPiece.color() != turn)
+	{
 		return false;
+	}
 
+	// TODO: implement promotions
 	if (movingPiece.type() == Pawn)
 	{
-		int direction = movingPiece.color() == White ? 1 : -1;
+		int dir = movingPiece.color() == White ? 1 : -1;
+		int upOne = moveFromPos(start, 0, dir);
+		int upTwo = moveFromPos(start, 0, dir * 2);
 
 		// pawn can move forward one square
-		if (start + direction * 8 == end && capturedPiece.type() == None)
+		if (upOne == end && isSpaceEmpty(upOne))
 			return true;
 
 		// pawn can move forward two if its on starting rank
-		int startRank = movingPiece.color() == White ? 2 : 6;
+		int startRank = movingPiece.color() == White ? 1 : 6;
 		int curRank = start / 8;
-		if (start + direction * 16 == end && state[start + direction * 8].type() == None && capturedPiece.type() == None && startRank == curRank)
+		if (upTwo == end && startRank == curRank && isSpaceEmpty(upOne) && isSpaceEmpty(upTwo))
 			return true;
 
-		// alternatively, it can capture by moving diagonally, either capturing a piece or one square above en passant square
-		bool movedUpDiagonal = abs(1) == 1;
-		if (movedUpDiagonal && capturedPiece.type() != None)
+		// alternatively, it can capture by moving diagonally up one, either capturing a piece or one square above en passant square
+		// TODO: implement en passant
+		int leftDiag = moveFromPos(start, -1, dir);
+		int rightDiag = moveFromPos(start, 1, dir);
+		bool movedUpDiagonal = abs(upOne - end) == 1 && upOne;
+		if ((leftDiag == end || rightDiag == end) && capturedPiece.type() != None)
 		{
 			return true;
 		}
 	}
 
-	return true;
+	if (movingPiece.type() == Knight)
+	{
+		// check all combos of 1 and 2 with signs
+		std::array<int, 8> dx = {-2, -2, -1, -1, 1, 1, 2, 2};
+		std::array<int, 8> dy = {-1, 1, -2, 2, -2, 2, -1, 1};
+		for (int i = 0; i < 8; i++)
+		{
+			if (end == moveFromPos(start, dx[i], dy[i]))
+				return true;
+		}
+	}
+
+	if (movingPiece.type() == Rook)
+	{
+		return LegalRookMove(start, end);
+	}
+
+	if (movingPiece.type() == Bishop)
+	{
+		return LegalBishopMove(start, end);
+	}
+
+	if (movingPiece.type() == Queen)
+	{
+		return LegalRookMove(start, end) || LegalBishopMove(start, end);
+	}
+
+	if (movingPiece.type() == King)
+	{
+		std::array<int, 8> dx = {-1, -1, -1, 0, 0, 1, 1, 1};
+		std::array<int, 8> dy = {1, 0, -1, 1, -1, 1, 0, -1};
+		for (int i = 0; i < 8; i++)
+		{
+			if (end == moveFromPos(start, dx[i], dy[i]))
+				return true;
+		}
+	}
+
+	return false;
 }
 
 void Board::MakeMove(Move move)
@@ -204,7 +311,7 @@ std::string Board::ToString()
 		}
 		ss << '\n';
 	}
-	ss << "\n  ";
+	ss << "  ";
 	for (int i = 0; i < BOARD_LEN; i++)
 		ss << Move::files[i];
 	return ss.str();
