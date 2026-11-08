@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "board.hpp"
+#include "../move_generator.hpp"
 
 constexpr bool charIsInt(char c)
 {
@@ -102,6 +103,53 @@ bool Board::IsSpaceEmpty(Space space)
 bool Board::IsBoardLegalAfterMove(Move move)
 {
 	return true;
+}
+
+// this is a very crappy way of doing this that is just so i can say i have it working
+// later we'll do bitboards and all that stuff to make this check not unreasonably slow
+bool Board::CurrentlyInCheck()
+{
+	// slow: find current turn king (we assume that this never fails)
+	Space kingSpace = Space(0, 0);
+	for (int i = 0; i < 64; i++)
+	{
+		if (state_[i].type() == PieceType::King && state_[i].color() == current_turn_)
+		{
+			kingSpace = Space(i);
+		}
+	}
+
+	// super slow: generate all possible piece moves from that position (pawns capture in lane as bishops)
+	// then go through all valid moves, if an enemy piece is on them of the corresponding type, then we are in check
+	// we loop through the diagonals and straights seperately to make writing this a bit easier
+	for (auto move : MoveGenerator::BishopMovesFrom(*this, kingSpace))
+	{
+		Piece attacker = state_[move.end().ind()];
+
+		int attackingPawnDir = current_turn_ == PieceColor::Black ? 1 : -1;
+		bool onAdjacentFile = abs(move.end().file() - kingSpace.file()) == 1;
+		bool onPawnAttackSquare = onAdjacentFile && (kingSpace.rank() - move.end().rank()) == attackingPawnDir; // FIXME: complete me
+		if (attacker.type() == PieceType::Pawn && onPawnAttackSquare)
+			return true;
+		if (attacker.type() == PieceType::Bishop || attacker.type() == PieceType::Queen)
+			return true;
+	}
+	for (auto move : MoveGenerator::RookMovesFrom(*this, kingSpace))
+	{
+		Piece attacker = state_[move.end().ind()];
+
+		if (attacker.type() == PieceType::Rook || attacker.type() == PieceType::Queen)
+			return true;
+	}
+	for (auto move : MoveGenerator::KnightMovesFrom(*this, kingSpace))
+	{
+		Piece attacker = state_[move.end().ind()];
+
+		if (attacker.type() == PieceType::Knight)
+			return true;
+	}
+
+	return false;
 }
 
 // we are going to make the assumption that this move is at least psuedolegal

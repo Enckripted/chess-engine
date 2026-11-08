@@ -2,15 +2,11 @@
 #include <iostream>
 #include <vector>
 
-#define private public
-#define protected public
-#include "move_generator.hpp"
-#undef private
-#undef protected
+#include "game/board.hpp"
 
 bool dogame = false;
 
-Board gameBoard;
+Board gameBoard = Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
 void playGame()
 {
@@ -70,75 +66,21 @@ int main()
 		return 0;
 	}
 
+	auto expect_check = [](const std::string &description, const std::string &fen)
 	{
-		Board board("8/8/8/8/8/8/pk6/Rb6 w - - 0 1");
-		MoveGenerator gen(board);
-		std::vector<Move> dirMoves;
-		std::cout << "Checking moveInDir" << std::endl;
-		gen.MoveInDir(Space(0, 0), Space(0, 1), dirMoves);
-		assert(dirMoves.size() == 1);
-		assert(dirMoves[0] == Move(Space(0, 0), Space(0, 1)));
-	}
+		std::cout << "Test: " << description << std::endl;
+		Board board(fen);
+		assert(board.CurrentlyInCheck());
+	};
 
-	{
-		Board board("8/8/8/8/8/8/8/P7 w - - 0 1");
-		MoveGenerator gen(board);
-		std::cout << "Checking pawn moves" << std::endl;
-		auto moves = gen.PawnMovesFrom(Space(0, 0));
-		assert(moves.size() == 1);
-		assert(moves[0] == Move(Space(0, 0), Space(0, 1)));
-	}
-
-	{
-		Board board("8/8/8/8/8/8/8/N7 w - - 0 1");
-		MoveGenerator gen(board);
-		std::cout << "Checking knight moves" << std::endl;
-		auto moves = gen.KnightMovesFrom(Space(0, 0));
-		assert(moves.size() == 2);
-		assert(moves[0] == Move(Space(0, 0), Space(2, 1)) || moves[0] == Move(Space(0, 0), Space(1, 2)));
-		assert(moves[1] == Move(Space(0, 0), Space(2, 1)) || moves[1] == Move(Space(0, 0), Space(1, 2)));
-	}
-
-	{
-		Board board("8/8/8/8/8/8/8/K7 w - - 0 1");
-		MoveGenerator gen(board);
-		std::cout << "Checking king moves" << std::endl;
-		auto moves = gen.KingMovesFrom(Space(0, 0));
-		assert(moves.size() == 3);
-		assert(moves[0] == Move(Space(0, 0), Space(1, 0)) || moves[0] == Move(Space(0, 0), Space(0, 1)) || moves[0] == Move(Space(0, 0), Space(1, 1)));
-		assert(moves[1] == Move(Space(0, 0), Space(1, 0)) || moves[1] == Move(Space(0, 0), Space(0, 1)) || moves[1] == Move(Space(0, 0), Space(1, 1)));
-		assert(moves[2] == Move(Space(0, 0), Space(1, 0)) || moves[2] == Move(Space(0, 0), Space(0, 1)) || moves[2] == Move(Space(0, 0), Space(1, 1)));
-	}
-
-	{
-		Board board("8/8/8/8/8/8/pk6/Rb6 w - - 0 1");
-		MoveGenerator gen(board);
-		std::cout << "Checking rook moves" << std::endl;
-		auto moves = gen.RookMovesFrom(Space(0, 0));
-		assert(moves.size() == 2);
-		assert(moves[0] == Move(Space(0, 0), Space(1, 0)));
-		assert(moves[1] == Move(Space(0, 0), Space(0, 1)));
-	}
-
-	{
-		Board board("8/8/8/8/8/8/1k6/B7 w - - 0 1");
-		MoveGenerator gen(board);
-		std::cout << "Checking bishop moves" << std::endl;
-		auto moves = gen.BishopMovesFrom(Space(0, 0));
-		assert(moves.size() == 1);
-		assert(moves[0] == Move(Space(0, 0), Space(1, 1)));
-	}
-
-	{
-		Board board("8/8/8/8/8/8/pk6/Rb6 w - - 0 1");
-		MoveGenerator gen(board);
-		std::cout << "Checking queen moves" << std::endl;
-		auto moves = gen.QueenMovesFrom(Space(0, 0));
-		assert(moves.size() == 3);
-		assert(moves[0] == Move(Space(0, 0), Space(1, 0)));
-		assert(moves[1] == Move(Space(0, 0), Space(0, 1)));
-		assert(moves[2] == Move(Space(0, 0), Space(1, 1)));
-	}
+	expect_check("queen on diagonal", "8/8/8/8/7q/8/8/4K3 w - - 0 1");
+	expect_check("rook on same file", "4r3/8/8/8/8/8/8/4K3 w - - 0 1");
+	expect_check("bishop on diagonal", "8/8/8/8/8/2b5/8/4K3 w - - 0 1");
+	expect_check("knight attack", "8/8/8/8/8/5n2/8/4K3 w - - 0 1");
+	expect_check("pawn attack left", "8/8/8/8/8/8/3p4/4K3 w - - 0 1");
+	expect_check("pawn attack right", "8/8/8/8/8/8/5p2/4K3 w - - 0 1");
+	expect_check("black king in check by white queen", "4k3/8/8/7Q/8/8/8/8 b - - 0 1");
+	expect_check("black king in check by white pawn", "4k3/3P4/8/8/8/8/8/8 b - - 0 1");
 
 	std::cout << "All move generator tests passed." << std::endl;
 	return 0;

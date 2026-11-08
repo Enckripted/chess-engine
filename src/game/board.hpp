@@ -41,11 +41,14 @@ public:
 	PieceColor current_turn() const;
 	Space passant_target() const;
 
+	// Board() : move_generator(MoveGenerator(*this)) {}
 	Board(std::string fen);
-	Board() = default;
+
+	bool CurrentlyInCheck();
 
 	bool IsSpaceEmpty(Space space);
 	Piece PieceOnSpace(Space space);
+
 	bool IsBoardLegalAfterMove(Move move); // check if the current turn's king will be in check
 	void MakeMove(Move move);
 	void UnmakeMove(); // reverses the last move made

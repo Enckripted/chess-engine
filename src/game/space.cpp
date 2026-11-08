@@ -3,6 +3,15 @@
 #include <array>
 #include <string>
 
+Space::Space(int ind)
+{
+	if (ind < 0 || ind >= 64)
+		throw std::invalid_argument("invalid space index: " + std::to_string(ind));
+
+	_rank = ind / 8;
+	_file = ind % 8;
+}
+
 Space::Space(std::string algStr)
 {
 	_rank = RankFromChar(algStr[1]);

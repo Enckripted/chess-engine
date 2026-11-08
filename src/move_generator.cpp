@@ -2,26 +2,32 @@
 
 #include <iostream>
 
-void MoveGenerator::MoveInDir(Space start, Space dir, std::vector<Move> &out)
+#include "game/board.hpp"
+
+void MoveGenerator::MoveInDir(Board &board, Space start, Space dir, std::vector<Move> &out)
 {
 	PieceColor color = board.state()[start.ind()].color();
 
 	Space cur = start;
-	std::cout << "starting at " + cur.ToStringNotation() << std::endl;
-	std::cout << "dir " + dir.ToString() << std::endl;
 	while (cur.is_valid())
 	{
 		cur += dir;
-		if (cur.is_valid() && board.PieceOnSpace(cur).color() != color) // if the color is opposite, then we can capture
-		{
-			out.push_back(Move(start, cur));
-			if (!board.IsSpaceEmpty(cur)) // but after capture we have to stop there
-				break;
-		}
+		if (!cur.is_valid())
+			continue;
+
+		// if its our piece we cant go further
+		if (board.PieceOnSpace(cur).color() == color)
+			break;
+
+		// if the color is not ours we can go there
+		out.push_back(Move(start, cur));
+		// but if its a capture we have to stop there
+		if (!board.IsSpaceEmpty(cur))
+			break;
 	}
 }
 
-std::vector<Move> MoveGenerator::PawnMovesFrom(Space start)
+std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start)
 {
 	PieceColor color = board.state()[start.ind()].color();
 	int dir = color == PieceColor::White ? 1 : -1;
@@ -36,7 +42,6 @@ std::vector<Move> MoveGenerator::PawnMovesFrom(Space start)
 	// and generate legal moves with the different possible promotion flags
 	std::vector<Move> moves;
 
-	// FIXME check if the move is on the board
 	if (forwardOne.is_valid() && board.IsSpaceEmpty(forwardOne))
 		moves.push_back(Move(start, forwardOne));
 	if (forwardTwo.is_valid() && start.rank() == initialPawnRank && board.IsSpaceEmpty(forwardOne) && board.IsSpaceEmpty(forwardTwo))
@@ -50,7 +55,7 @@ std::vector<Move> MoveGenerator::PawnMovesFrom(Space start)
 	return moves;
 }
 
-std::vector<Move> MoveGenerator::KnightMovesFrom(Space start)
+std::vector<Move> MoveGenerator::KnightMovesFrom(Board &board, Space start)
 {
 	PieceColor color = board.state()[start.ind()].color();
 
@@ -64,7 +69,7 @@ std::vector<Move> MoveGenerator::KnightMovesFrom(Space start)
 	return moves;
 }
 
-std::vector<Move> MoveGenerator::KingMovesFrom(Space start)
+std::vector<Move> MoveGenerator::KingMovesFrom(Board &board, Space start)
 {
 	PieceColor color = board.state()[start.ind()].color();
 
@@ -78,40 +83,36 @@ std::vector<Move> MoveGenerator::KingMovesFrom(Space start)
 	return moves;
 }
 
-std::vector<Move> MoveGenerator::RookMovesFrom(Space start)
+std::vector<Move> MoveGenerator::RookMovesFrom(Board &board, Space start)
 {
 	std::vector<Move> moves;
 	for (auto dir : rook_dirs)
 	{
-		std::cout << "let's do " << dir.ToString() << std::endl;
-	}
-	for (auto dir : rook_dirs)
-	{
-		MoveInDir(start, dir, moves);
+		MoveInDir(board, start, dir, moves);
 	}
 	return moves;
 }
 
-std::vector<Move> MoveGenerator::BishopMovesFrom(Space start)
+std::vector<Move> MoveGenerator::BishopMovesFrom(Board &board, Space start)
 {
 	std::vector<Move> moves;
 	for (auto dir : bishop_dirs)
 	{
-		MoveInDir(start, dir, moves);
+		MoveInDir(board, start, dir, moves);
 	}
 	return moves;
 }
 
-std::vector<Move> MoveGenerator::QueenMovesFrom(Space start)
+std::vector<Move> MoveGenerator::QueenMovesFrom(Board &board, Space start)
 {
 	std::vector<Move> moves;
 	for (auto dir : rook_dirs)
 	{
-		MoveInDir(start, dir, moves);
+		MoveInDir(board, start, dir, moves);
 	}
 	for (auto dir : bishop_dirs)
 	{
-		MoveInDir(start, dir, moves);
+		MoveInDir(board, start, dir, moves);
 	}
 	return moves;
 }

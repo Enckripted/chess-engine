@@ -1,3 +1,6 @@
+#ifndef MOVE_GENERATOR_H
+#define MOVE_GENERATOR_H
+
 #include <vector>
 #include <array>
 
@@ -7,7 +10,7 @@
 class MoveGenerator
 {
 private:
-	Board &board;
+	MoveGenerator() = delete;
 
 	inline static const std::array<Space, 4> rook_dirs{Space{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 	inline static const std::array<Space, 4> bishop_dirs{Space{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
@@ -17,20 +20,19 @@ private:
 	inline static const std::array<Space, 8> king_moves{
 		Space{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
 
-	void MoveInDir(Space start, Space dir, std::vector<Move> &out);
-
-	std::vector<Move> PawnMovesFrom(Space start);
-	std::vector<Move> RookMovesFrom(Space start);
-	std::vector<Move> BishopMovesFrom(Space start);
-	std::vector<Move> KnightMovesFrom(Space start);
-	std::vector<Move> QueenMovesFrom(Space start);
-	std::vector<Move> KingMovesFrom(Space start);
-
-	std::vector<Move> FilterLegalMoves(std::vector<Move> moves);
+	static void MoveInDir(Board &board, Space start, Space dir, std::vector<Move> &out);
+	static std::vector<Move> FilterLegalMoves(Board &board, std::vector<Move> moves);
 
 public:
-	MoveGenerator(Board &board_) : board(board_) {}
+	static std::vector<Move> PawnMovesFrom(Board &board, Space start);
+	static std::vector<Move> RookMovesFrom(Board &board, Space start);
+	static std::vector<Move> BishopMovesFrom(Board &board, Space start);
+	static std::vector<Move> KnightMovesFrom(Board &board, Space start);
+	static std::vector<Move> QueenMovesFrom(Board &board, Space start);
+	static std::vector<Move> KingMovesFrom(Board &board, Space start);
 
-	std::vector<Move> GenerateLegalMovesAt(Space start);
-	std::vector<Move> GenerateLegalMoves();
+	static std::vector<Move> GenerateLegalMovesAt(Board &board, Space start);
+	static std::vector<Move> GenerateLegalMoves(Board &board);
 };
+
+#endif
