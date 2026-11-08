@@ -1,35 +1,37 @@
 #ifndef MOVE_H
 #define MOVE_H
 
-#include <cstdint>
 #include <string>
 #include <array>
 
-#include "constants.hpp"
+#include "space.hpp"
 
 class Move
 {
 private:
-	int start;
-	int end;
+	Space _start = Space(0, 0);
+	Space _end = Space(0, 0);
 
 public:
-	int getStart();
-	int getEnd();
-
-	// static helpers for dealing with UCI notation
-	static const std::array<char, BOARD_LEN> ranks;
-	static const std::array<char, BOARD_LEN> files;
-	static const char rankCharStart;
-	static const char fileCharStart;
-
-	static int squareToInd(std::string square);
-	static std::string indToSquare(int ind);
+	inline Space start() const
+	{
+		return _start;
+	};
+	inline Space end() const
+	{
+		return _end;
+	}
 
 	// https://en.wikipedia.org/wiki/Universal_Chess_Interface#Design
 	// TODO: maybe a version that uses algebraic notation?
+	Move(Space start, Space end) : _start(start), _end(end) {}
 	Move(std::string uciMove);
-	Move();
+	Move() = default;
+
+	inline bool operator==(const Move &other) const
+	{
+		return (*this).start() == other.start() && (*this).end() == other.end();
+	}
 };
 
 #endif

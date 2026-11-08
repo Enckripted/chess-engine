@@ -5,60 +5,50 @@
 #include <vector>
 #include <string>
 
-#include "constants.hpp"
 #include "piece.hpp"
 #include "move.hpp"
 
-const int BOARD_SIZE = BOARD_LEN * BOARD_LEN;
-
 struct BoardMove
 {
-	Move move;
+	Move move = Move("a1a1");
 	Piece capture;
-	std::array<bool, 4> castlingLoss{};
+	std::array<bool, 4> castling_change{};
 	// just so we can go back, en passant gets set by the board when going forward
-	int prevEnPassant;
+	Space prev_passant;
 
-	BoardMove(Move mov, Piece cap, int prevPassant, std::array<bool, 4> castlingRightsChange);
+	BoardMove(Move move_, Piece capture_, Space prev_passant_, std::array<bool, 4> castling_change_)
+		: move(move_), capture(capture_), castling_change(castling_change_), prev_passant(prev_passant_) {}
 };
 
 class Board
 {
 private:
-	// in theory every value here should be set by constructor but i figure
-	// no harm in sensible defaults
-	std::array<Piece, BOARD_SIZE> state{};
-	std::array<bool, 4> castlingRights = {1, 1, 1, 1};
-	PieceColor turn = White;
+	std::array<Piece, 64> state_{};
+	std::array<bool, 4> castling_rights_ = {1, 1, 1, 1};
+	PieceColor current_turn_ = PieceColor::White;
+
 	// if this is -1, then en passant cannot be done on this turn
-	int enPassantTarget = -1;
+	Space passant_target_ = Space(-1, -1);
+
 	int halfmoves = 0;
 	int fullmove = 1;
 
-	std::vector<BoardMove> pastMoves;
-
-	Piece parseLetterToPiece(char c);
-
-	bool LegalRookMove(int start, int end);
-	bool LegalBishopMove(int start, int end);
+	std::vector<BoardMove> past_moves;
 
 public:
-	// returns -1 if the space we're trying to move to is off the board
-	static int moveFromPos(int pos, int x, int y);
-
-	std::array<Piece, BOARD_LEN * BOARD_LEN> getState() const;
-	std::array<bool, 4> getCastlingRights() const;
-	PieceColor getTurn() const;
-	int getEnPassantTarget() const;
-
-	bool isSpaceEmpty(int ind) const;
+	std::array<Piece, 64> state() const;
+	std::array<bool, 4> castling_rights() const;
+	PieceColor current_turn() const;
+	Space passant_target() const;
 
 	Board(std::string fen);
 	Board() = default;
-	bool IsMoveLegal(Move move);
+
+	bool IsSpaceEmpty(Space space);
+	Piece PieceOnSpace(Space space);
+	bool IsBoardLegalAfterMove(Move move); // check if the current turn's king will be in check
 	void MakeMove(Move move);
-	// reverses the last move made
-	void UnmakeMove();
+	void UnmakeMove(); // reverses the last move made
 
 	std::string ToString();
 };
