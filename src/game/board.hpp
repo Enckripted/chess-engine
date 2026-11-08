@@ -8,6 +8,7 @@
 #include "piece.hpp"
 #include "move.hpp"
 
+/*
 struct BoardMove
 {
 	Move move = Move("a1a1");
@@ -18,7 +19,7 @@ struct BoardMove
 
 	BoardMove(Move move_, Piece capture_, Space prev_passant_, std::array<bool, 4> castling_change_)
 		: move(move_), capture(capture_), castling_change(castling_change_), prev_passant(prev_passant_) {}
-};
+};*/
 
 class Board
 {
@@ -33,25 +34,31 @@ private:
 	int halfmoves = 0;
 	int fullmove = 1;
 
-	std::vector<BoardMove> past_moves;
+	std::vector<Move> past_moves;
+
+	inline PieceColor OppositeColor(PieceColor color)
+	{
+		return color == PieceColor::White ? PieceColor::Black : PieceColor::White;
+	}
+	void ApplyMove(Move move); // applies a move without regard to legality
+	void UnapplyMove();		   // reverses the last move made
 
 public:
+	// TODO: make these inline
 	std::array<Piece, 64> state() const;
 	std::array<bool, 4> castling_rights() const;
 	PieceColor current_turn() const;
 	Space passant_target() const;
 
-	// Board() : move_generator(MoveGenerator(*this)) {}
 	Board(std::string fen);
 
-	bool CurrentlyInCheck();
+	bool CurrentlyInCheck(PieceColor kingColor);
 
 	bool IsSpaceEmpty(Space space);
 	Piece PieceOnSpace(Space space);
 
-	bool IsBoardLegalAfterMove(Move move); // check if the current turn's king will be in check
-	void MakeMove(Move move);
-	void UnmakeMove(); // reverses the last move made
+	bool IsBoardLegal();	  // check if the current turn's king will be in check
+	bool MakeMove(Move move); // public facing move making, checks for illegal moves past just a future invalid board state
 
 	std::string ToString();
 };

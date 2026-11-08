@@ -3,6 +3,7 @@
 #include <string>
 #include <array>
 #include <stdexcept>
+#include <iostream>
 
 Move::Move(std::string uciMove)
 {
@@ -11,4 +12,9 @@ Move::Move(std::string uciMove)
 
 	_start = Space(uciMove.substr(0, 2));
 	_end = Space(uciMove.substr(2, 2));
+}
+
+std::string Move::ToString()
+{
+	return _start.ToStringNotation() + _end.ToStringNotation();
 }

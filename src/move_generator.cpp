@@ -31,7 +31,7 @@ std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start)
 {
 	PieceColor color = board.state()[start.ind()].color();
 	int dir = color == PieceColor::White ? 1 : -1;
-	int initialPawnRank = color == PieceColor::White ? 2 : 6;
+	int initialPawnRank = color == PieceColor::White ? 1 : 6;
 
 	Space forwardOne = start + Space(0, dir);
 	Space forwardTwo = start + Space(0, dir * 2);
@@ -63,7 +63,7 @@ std::vector<Move> MoveGenerator::KnightMovesFrom(Board &board, Space start)
 	for (auto moveDir : knight_moves)
 	{
 		Space end = start + moveDir;
-		if (moveDir.is_valid() && board.PieceOnSpace(end).color() != color)
+		if (end.is_valid() && board.PieceOnSpace(end).color() != color)
 			moves.push_back(Move(start, end));
 	}
 	return moves;
@@ -77,7 +77,7 @@ std::vector<Move> MoveGenerator::KingMovesFrom(Board &board, Space start)
 	for (auto moveDir : king_moves)
 	{
 		Space end = start + moveDir;
-		if (moveDir.is_valid() && board.PieceOnSpace(end).color() != color)
+		if (end.is_valid() && board.PieceOnSpace(end).color() != color)
 			moves.push_back(Move(start, end));
 	}
 	return moves;
@@ -115,4 +115,25 @@ std::vector<Move> MoveGenerator::QueenMovesFrom(Board &board, Space start)
 		MoveInDir(board, start, dir, moves);
 	}
 	return moves;
+}
+
+std::vector<Move> MoveGenerator::MovesFrom(Board &board, Space start)
+{
+	switch (board.state()[start.ind()].type())
+	{
+	case PieceType::Pawn:
+		return PawnMovesFrom(board, start);
+	case PieceType::Knight:
+		return KnightMovesFrom(board, start);
+	case PieceType::Bishop:
+		return BishopMovesFrom(board, start);
+	case PieceType::Rook:
+		return RookMovesFrom(board, start);
+	case PieceType::Queen:
+		return QueenMovesFrom(board, start);
+	case PieceType::King:
+		return KingMovesFrom(board, start);
+	default:
+		return {};
+	}
 }

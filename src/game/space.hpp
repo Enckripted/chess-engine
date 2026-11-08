@@ -10,7 +10,7 @@ class Space
 private:
 	static constexpr int RankFromChar(char rank_char)
 	{
-		int res = rank_char - '0';
+		int res = rank_char - '1';
 		if (res < 0 || res >= 8)
 			throw std::invalid_argument("invalid rank: " + rank_char);
 		return res;
@@ -49,7 +49,7 @@ public:
 	}
 
 	Space(int ind);
-	constexpr Space(int rank, int file) : _rank(rank), _file(file) {}
+	constexpr Space(int file, int rank) : _rank(rank), _file(file) {}
 	Space(std::string algStr);
 
 	std::string ToString();

@@ -99,21 +99,15 @@ bool Board::IsSpaceEmpty(Space space)
 	return PieceOnSpace(space).type() == PieceType::None;
 }
 
-// TODO: check if current turn king will be in check, otherwise then we're good
-bool Board::IsBoardLegalAfterMove(Move move)
-{
-	return true;
-}
-
 // this is a very crappy way of doing this that is just so i can say i have it working
 // later we'll do bitboards and all that stuff to make this check not unreasonably slow
-bool Board::CurrentlyInCheck()
+bool Board::CurrentlyInCheck(PieceColor kingColor)
 {
 	// slow: find current turn king (we assume that this never fails)
 	Space kingSpace = Space(0, 0);
 	for (int i = 0; i < 64; i++)
 	{
-		if (state_[i].type() == PieceType::King && state_[i].color() == current_turn_)
+		if (state_[i].type() == PieceType::King && state_[i].color() == kingColor)
 		{
 			kingSpace = Space(i);
 		}
@@ -128,12 +122,13 @@ bool Board::CurrentlyInCheck()
 
 		int attackingPawnDir = current_turn_ == PieceColor::Black ? 1 : -1;
 		bool onAdjacentFile = abs(move.end().file() - kingSpace.file()) == 1;
-		bool onPawnAttackSquare = onAdjacentFile && (kingSpace.rank() - move.end().rank()) == attackingPawnDir; // FIXME: complete me
+		bool onPawnAttackSquare = onAdjacentFile && (kingSpace.rank() - move.end().rank()) == attackingPawnDir;
 		if (attacker.type() == PieceType::Pawn && onPawnAttackSquare)
 			return true;
 		if (attacker.type() == PieceType::Bishop || attacker.type() == PieceType::Queen)
 			return true;
 	}
+	std::cout << "diagonal legality check" << std::endl;
 	for (auto move : MoveGenerator::RookMovesFrom(*this, kingSpace))
 	{
 		Piece attacker = state_[move.end().ind()];
@@ -141,6 +136,7 @@ bool Board::CurrentlyInCheck()
 		if (attacker.type() == PieceType::Rook || attacker.type() == PieceType::Queen)
 			return true;
 	}
+	std::cout << "straight legality check" << std::endl;
 	for (auto move : MoveGenerator::KnightMovesFrom(*this, kingSpace))
 	{
 		Piece attacker = state_[move.end().ind()];
@@ -148,34 +144,85 @@ bool Board::CurrentlyInCheck()
 		if (attacker.type() == PieceType::Knight)
 			return true;
 	}
-
+	std::cout << "knight legality check" << std::endl;
 	return false;
 }
 
 // we are going to make the assumption that this move is at least psuedolegal
-void Board::MakeMove(Move move)
+void Board::ApplyMove(Move move)
 {
-	if (!IsBoardLegalAfterMove(move))
-	{
-		std::cout << "made invalid move " + move.start().ToStringNotation() + " to " + move.end().ToStringNotation() << std::endl;
-		return;
-	}
-
 	// TODO:
 	// Update castling rights when a castle is made
 	// Update en passant whenever that happens
 	// Handle promotions
 
 	Piece capturedPiece = state_[move.end().ind()];
-	auto boardMove = BoardMove(move, capturedPiece, passant_target_, std::array<bool, 4>{});
+	move.set_capture(capturedPiece);
 
 	state_[move.end().ind()] = state_[move.start().ind()];
-	state_[move.start().ind()] = Piece(PieceType::None, PieceColor::None);
-	past_moves.push_back(boardMove);
+	state_[move.start().ind()] = Piece::None;
+
+	past_moves.push_back(move);
+	current_turn_ = OppositeColor(current_turn_);
 }
 
-void Board::UnmakeMove()
+void Board::UnapplyMove()
 {
+	Move lastMove = past_moves.back();
+
+	// default case
+	state_[lastMove.start().ind()] = state_[lastMove.end().ind()]; // move the piece back to start
+	state_[lastMove.end().ind()] = lastMove.capture();			   // add the captured piece back (if any)
+
+	past_moves.pop_back();
+	current_turn_ = OppositeColor(current_turn_);
+}
+
+// TODO: check if current turn king will be in check, otherwise then we're good
+bool Board::IsBoardLegal()
+{
+	if (CurrentlyInCheck(OppositeColor(current_turn_)))
+	{
+		std::cout << "Cannot make move, currently in check" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+// assumes this move is pseudolegal
+bool Board::MakeMove(Move move)
+{
+	// basic sanity checks
+	if (move.start().is_valid() && move.end().is_valid() && state_[move.start().ind()].color() != current_turn_ || state_[move.end().ind()].color() == current_turn_)
+	{
+		return false;
+	}
+
+	std::cout << "basic sanity checks " << std::endl;
+	bool psuedoLegal = false;
+	for (auto psuedoMove : MoveGenerator::MovesFrom(*this, move.start()))
+	{
+		std::cout << "psuedo legal " << psuedoMove.ToString() << std::endl;
+		if (psuedoMove == move)
+		{
+
+			psuedoLegal = true;
+			break;
+		}
+	}
+	if (!psuedoLegal)
+		return false;
+
+	std::cout << "psuedo legal pass" << std::endl;
+	ApplyMove(move);
+	if (!IsBoardLegal())
+	{
+		std::cout << "made invalid move " + move.start().ToStringNotation() + " to " + move.end().ToStringNotation() << std::endl;
+		UnapplyMove();
+		return false;
+	}
+
+	return true;
 }
 
 std::string Board::ToString()

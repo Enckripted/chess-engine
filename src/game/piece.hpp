@@ -32,6 +32,8 @@ public:
 	constexpr Piece() {}
 	constexpr Piece(PieceType type_, PieceColor color_) : _type(type_), _color(color_) {}
 
+	static const Piece None;
+
 	constexpr PieceType type() const
 	{
 		return _type;
@@ -120,5 +122,7 @@ public:
 		return res;
 	}
 };
+
+inline const Piece Piece::None = Piece(PieceType::None, PieceColor::None);
 
 #endif
