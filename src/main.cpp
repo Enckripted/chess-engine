@@ -7,7 +7,7 @@
 
 #include "tui.hpp"
 
-bool dogame = true;
+bool dogame = false;
 
 int main()
 {

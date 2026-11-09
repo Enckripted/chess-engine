@@ -10,9 +10,10 @@
 class Move
 {
 private:
-	Space _start = Space(0, 0);
-	Space _end = Space(0, 0);
+	Space _start = Space();
+	Space _end = Space();
 	Piece _capture = Piece::None;
+	Space _passant_target = Space();
 
 public:
 	inline Space start() const
@@ -27,10 +28,18 @@ public:
 	{
 		return _capture;
 	}
+	inline Space passant_target() const
+	{
+		return _passant_target;
+	}
 
 	inline void set_capture(Piece capture)
 	{
 		_capture = capture;
+	}
+	inline void set_passant_target(Space passant_target)
+	{
+		_passant_target = passant_target;
 	}
 
 	// https://en.wikipedia.org/wiki/Universal_Chess_Interface#Design

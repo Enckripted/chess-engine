@@ -4,15 +4,6 @@
 #include <string>
 #include <iostream>
 
-Space::Space(int ind)
-{
-	if (ind < 0 || ind >= 64)
-		throw std::invalid_argument("invalid space index: " + std::to_string(ind));
-
-	_file = ind % 8;
-	_rank = ind / 8;
-}
-
 Space::Space(std::string algStr)
 {
 	_file = FileFromChar(algStr[0]);

@@ -44,12 +44,20 @@ std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start)
 
 	if (forwardOne.is_valid() && board.IsSpaceEmpty(forwardOne))
 		moves.push_back(Move(start, forwardOne));
+
 	if (forwardTwo.is_valid() && start.rank() == initialPawnRank && board.IsSpaceEmpty(forwardOne) && board.IsSpaceEmpty(forwardTwo))
-		moves.push_back(Move(start, forwardTwo));
+	{
+		Move move = Move(start, forwardTwo);
+		move.set_passant_target(forwardOne);
+		moves.push_back(move);
+	}
+
 	// TODO: check for en passant (simple fix)
-	if (leftDiagonal.is_valid() && !board.IsSpaceEmpty(leftDiagonal) && board.PieceOnSpace(leftDiagonal).color() != color)
+	bool captureOnLeft = !board.IsSpaceEmpty(leftDiagonal) && board.PieceOnSpace(leftDiagonal).color() != color;
+	if (leftDiagonal.is_valid() && (board.passant_target() == leftDiagonal || captureOnLeft))
 		moves.push_back(Move(start, leftDiagonal));
-	if (rightDiagonal.is_valid() && !board.IsSpaceEmpty(rightDiagonal) && board.PieceOnSpace(rightDiagonal).color() != color)
+	bool captureOnRight = !board.IsSpaceEmpty(rightDiagonal) && board.PieceOnSpace(rightDiagonal).color() != color;
+	if (rightDiagonal.is_valid() && (board.passant_target() == rightDiagonal || captureOnRight))
 		moves.push_back(Move(start, rightDiagonal));
 
 	return moves;

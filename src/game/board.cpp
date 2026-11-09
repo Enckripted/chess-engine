@@ -159,6 +159,7 @@ void Board::ApplyMove(Move move)
 
 	state_[move.end().ind()] = state_[move.start().ind()];
 	state_[move.start().ind()] = Piece::None;
+	passant_target_ = move.passant_target();
 
 	past_moves.push_back(move);
 	current_turn_ = OppositeColor(current_turn_);
@@ -171,6 +172,10 @@ void Board::UnapplyMove()
 	// default case
 	state_[lastMove.start().ind()] = state_[lastMove.end().ind()]; // move the piece back to start
 	state_[lastMove.end().ind()] = lastMove.capture();			   // add the captured piece back (if any)
+	if (past_moves.size() > 1)									   // revert back to previous passant target
+		passant_target_ = past_moves[past_moves.size() - 2].passant_target();
+	else
+		passant_target_ = Space();
 
 	past_moves.pop_back();
 	current_turn_ = OppositeColor(current_turn_);
@@ -216,8 +221,9 @@ bool Board::MakeMove(Move move)
 		// std::cout << "psuedo legal " << psuedoMove.ToString() << std::endl;
 		if (psuedoMove == move)
 		{
-
 			psuedoLegal = true;
+			// IMPORTANT: this psuedo move has extra information encoded in, saving us having to write it later in this function
+			move = psuedoMove;
 			break;
 		}
 	}

@@ -48,7 +48,8 @@ public:
 		return _rank * 8 + _file;
 	}
 
-	Space(int ind);
+	constexpr Space() : _file(-1), _rank(-1) {}
+	constexpr Space(int ind) : _file(ind % 8), _rank(ind / 8) {}
 	constexpr Space(int file, int rank) : _rank(rank), _file(file) {}
 	Space(std::string algStr);
 
