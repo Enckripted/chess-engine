@@ -9,7 +9,9 @@ src/main.cpp
 src/game/move.cpp
 src/game/board.cpp
 src/game/space.cpp
+src/game/game_result.cpp
 src/move_generator.cpp
+src/tui.cpp
 )
 
 target_link_options(chess-engine PRIVATE -static)

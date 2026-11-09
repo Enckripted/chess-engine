@@ -32,7 +32,7 @@ public:
 	static std::vector<Move> KingMovesFrom(Board &board, Space start);
 	static std::vector<Move> MovesFrom(Board &board, Space start);
 
-	static std::vector<Move> GenerateLegalMovesAt(Board &board, Space start);
+	static void GenerateLegalMovesAt(Board &board, Space start, std::vector<Move> &out);
 	static std::vector<Move> GenerateLegalMoves(Board &board);
 };
 

@@ -57,8 +57,9 @@ public:
 	bool IsSpaceEmpty(Space space);
 	Piece PieceOnSpace(Space space);
 
-	bool IsBoardLegal();	  // check if the current turn's king will be in check
-	bool MakeMove(Move move); // public facing move making, checks for illegal moves past just a future invalid board state
+	bool IsBoardLegal();		 // check if the current turn's king will be in check
+	bool IsMoveLegal(Move move); // check if making this move would make IsBoardLegal false
+	bool MakeMove(Move move);	 // public facing move making, checks for illegal moves past just a future invalid board state
 
 	std::string ToString();
 };

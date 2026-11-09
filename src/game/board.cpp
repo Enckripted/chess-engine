@@ -128,7 +128,6 @@ bool Board::CurrentlyInCheck(PieceColor kingColor)
 		if (attacker.type() == PieceType::Bishop || attacker.type() == PieceType::Queen)
 			return true;
 	}
-	std::cout << "diagonal legality check" << std::endl;
 	for (auto move : MoveGenerator::RookMovesFrom(*this, kingSpace))
 	{
 		Piece attacker = state_[move.end().ind()];
@@ -136,7 +135,6 @@ bool Board::CurrentlyInCheck(PieceColor kingColor)
 		if (attacker.type() == PieceType::Rook || attacker.type() == PieceType::Queen)
 			return true;
 	}
-	std::cout << "straight legality check" << std::endl;
 	for (auto move : MoveGenerator::KnightMovesFrom(*this, kingSpace))
 	{
 		Piece attacker = state_[move.end().ind()];
@@ -144,7 +142,7 @@ bool Board::CurrentlyInCheck(PieceColor kingColor)
 		if (attacker.type() == PieceType::Knight)
 			return true;
 	}
-	std::cout << "knight legality check" << std::endl;
+
 	return false;
 }
 
@@ -183,9 +181,22 @@ bool Board::IsBoardLegal()
 {
 	if (CurrentlyInCheck(OppositeColor(current_turn_)))
 	{
-		std::cout << "Cannot make move, currently in check" << std::endl;
+		// std::cout << "Cannot make move, currently in check" << std::endl;
 		return false;
 	}
+	return true;
+}
+
+bool Board::IsMoveLegal(Move move)
+{
+	ApplyMove(move);
+	if (!IsBoardLegal())
+	{
+		// std::cout << "made invalid move " + move.start().ToStringNotation() + " to " + move.end().ToStringNotation() << std::endl;
+		UnapplyMove();
+		return false;
+	}
+	UnapplyMove();
 	return true;
 }
 
@@ -198,11 +209,11 @@ bool Board::MakeMove(Move move)
 		return false;
 	}
 
-	std::cout << "basic sanity checks " << std::endl;
+	// std::cout << "basic sanity checks " << std::endl;
 	bool psuedoLegal = false;
 	for (auto psuedoMove : MoveGenerator::MovesFrom(*this, move.start()))
 	{
-		std::cout << "psuedo legal " << psuedoMove.ToString() << std::endl;
+		// std::cout << "psuedo legal " << psuedoMove.ToString() << std::endl;
 		if (psuedoMove == move)
 		{
 
@@ -213,16 +224,13 @@ bool Board::MakeMove(Move move)
 	if (!psuedoLegal)
 		return false;
 
-	std::cout << "psuedo legal pass" << std::endl;
-	ApplyMove(move);
-	if (!IsBoardLegal())
+	// std::cout << "psuedo legal pass" << std::endl;
+	if (IsMoveLegal(move))
 	{
-		std::cout << "made invalid move " + move.start().ToStringNotation() + " to " + move.end().ToStringNotation() << std::endl;
-		UnapplyMove();
-		return false;
+		ApplyMove(move);
+		return true;
 	}
-
-	return true;
+	return false;
 }
 
 std::string Board::ToString()

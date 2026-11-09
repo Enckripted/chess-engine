@@ -137,3 +137,23 @@ std::vector<Move> MoveGenerator::MovesFrom(Board &board, Space start)
 		return {};
 	}
 }
+
+void MoveGenerator::GenerateLegalMovesAt(Board &board, Space space, std::vector<Move> &out)
+{
+	if (board.PieceOnSpace(space).color() != board.current_turn())
+		return;
+
+	for (auto move : MovesFrom(board, space))
+		if (board.IsMoveLegal(move))
+			out.push_back(move);
+}
+
+std::vector<Move> MoveGenerator::GenerateLegalMoves(Board &board)
+{
+	std::vector<Move> moves;
+	for (int i = 0; i < 64; i++)
+	{
+		GenerateLegalMovesAt(board, Space(i), moves);
+	}
+	return moves;
+}
