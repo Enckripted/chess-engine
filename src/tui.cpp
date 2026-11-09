@@ -1,6 +1,7 @@
 #include "tui.hpp"
 
 #include <iostream>
+#include <sstream>
 
 #include "game/game_result.hpp"
 

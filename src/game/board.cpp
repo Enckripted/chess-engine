@@ -258,12 +258,12 @@ std::string Board::ToString()
 		ss << Space::kRankChars[i] << " ";
 		for (int j = 0; j < 8; j++)
 		{
-			ss << Piece::charFromPiece(state_[i * 8 + j]);
+			ss << Piece::charFromPiece(state_[i * 8 + j]) << " ";
 		}
 		ss << '\n';
 	}
 	ss << "  ";
 	for (int i = 0; i < 8; i++)
-		ss << Space::kFileChars[i];
+		ss << Space::kFileChars[i] << " ";
 	return ss.str();
 }

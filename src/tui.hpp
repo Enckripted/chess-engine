@@ -1,3 +1,8 @@
+#ifndef TUI_HPP
+#define TUI_HPP
+
+#include <string>
+
 #include "game/board.hpp"
 
 class TerminalUi
@@ -12,3 +17,5 @@ private:
 public:
 	void StartGame();
 };
+
+#endif
