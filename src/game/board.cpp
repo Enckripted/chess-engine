@@ -146,7 +146,7 @@ bool Board::CurrentlyInCheck(PieceColor kingColor)
 	return false;
 }
 
-// we are going to make the assumption that this move is at least psuedolegal
+// this function makes the assumption that the given move is psuedolegal
 void Board::ApplyMove(Move move)
 {
 	// TODO:
@@ -160,6 +160,11 @@ void Board::ApplyMove(Move move)
 	state_[move.end().ind()] = state_[move.start().ind()];
 	state_[move.start().ind()] = Piece::None;
 	passant_target_ = move.passant_target();
+
+	if (move.promotion_flag() != PieceType::None)
+	{
+		state_[move.end().ind()] = Piece(move.promotion_flag(), current_turn_);
+	}
 
 	past_moves.push_back(move);
 	current_turn_ = OppositeColor(current_turn_);
@@ -176,6 +181,12 @@ void Board::UnapplyMove()
 		passant_target_ = past_moves[past_moves.size() - 2].passant_target();
 	else
 		passant_target_ = Space();
+
+	// if it was promoted, we have to revert it back to a pawn
+	if (lastMove.promotion_flag() != PieceType::None)
+	{
+		state_[lastMove.start().ind()] = Piece(PieceType::Pawn, current_turn_);
+	}
 
 	past_moves.pop_back();
 	current_turn_ = OppositeColor(current_turn_);

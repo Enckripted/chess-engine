@@ -4,10 +4,11 @@
 
 #include "game/board.hpp"
 #include "game/game_result.hpp"
+#include "move_generator.hpp"
 
 #include "tui.hpp"
 
-bool dogame = false;
+bool dogame = true;
 
 int main()
 {

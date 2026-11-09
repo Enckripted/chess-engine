@@ -12,6 +12,7 @@ void TerminalUi::PrintGameState()
 	if (gameBoard.CurrentlyInCheck(gameBoard.current_turn()))
 		std::cout << "You are in check" << std::endl;
 	std::cout << "\nEnter your move in UCI format (e.g. e2e4, 'exit' to stop):" << std::endl;
+	std::cout << "Promotions are marked by adding an extra letter (b,n,r,q)" << std::endl;
 }
 
 void TerminalUi::StartGame()

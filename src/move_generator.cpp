@@ -27,23 +27,33 @@ void MoveGenerator::MoveInDir(Board &board, Space start, Space dir, std::vector<
 	}
 }
 
+void MoveGenerator::ConvertToPromotionMoves(Move move, std::vector<Move> &out)
+{
+	for (auto promotionType : pawn_promotions)
+		out.push_back(Move(move.start(), move.end(), promotionType));
+}
+
 std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start)
 {
 	PieceColor color = board.state()[start.ind()].color();
 	int dir = color == PieceColor::White ? 1 : -1;
 	int initialPawnRank = color == PieceColor::White ? 1 : 6;
+	int promotionPawnRank = color == PieceColor::White ? 7 : 0;
 
 	Space forwardOne = start + Space(0, dir);
 	Space forwardTwo = start + Space(0, dir * 2);
 	Space leftDiagonal = start + Space(-1, 1);
-	Space rightDiagonal = start + Space(1, -1);
+	Space rightDiagonal = start + Space(1, 1);
 
-	// TODO: at some point we will need to recgonize promotion
-	// and generate legal moves with the different possible promotion flags
 	std::vector<Move> moves;
 
 	if (forwardOne.is_valid() && board.IsSpaceEmpty(forwardOne))
-		moves.push_back(Move(start, forwardOne));
+	{
+		if (forwardOne.rank() == promotionPawnRank)
+			ConvertToPromotionMoves(Move(start, forwardOne), moves);
+		else
+			moves.push_back(Move(start, forwardOne));
+	}
 
 	if (forwardTwo.is_valid() && start.rank() == initialPawnRank && board.IsSpaceEmpty(forwardOne) && board.IsSpaceEmpty(forwardTwo))
 	{
@@ -52,14 +62,23 @@ std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start)
 		moves.push_back(move);
 	}
 
-	// TODO: check for en passant (simple fix)
 	bool captureOnLeft = !board.IsSpaceEmpty(leftDiagonal) && board.PieceOnSpace(leftDiagonal).color() != color;
 	if (leftDiagonal.is_valid() && (board.passant_target() == leftDiagonal || captureOnLeft))
-		moves.push_back(Move(start, leftDiagonal));
+	{
+		if (leftDiagonal.rank() == promotionPawnRank)
+			ConvertToPromotionMoves(Move(start, leftDiagonal), moves);
+		else
+			moves.push_back(Move(start, leftDiagonal));
+	}
+
 	bool captureOnRight = !board.IsSpaceEmpty(rightDiagonal) && board.PieceOnSpace(rightDiagonal).color() != color;
 	if (rightDiagonal.is_valid() && (board.passant_target() == rightDiagonal || captureOnRight))
-		moves.push_back(Move(start, rightDiagonal));
-
+	{
+		if (rightDiagonal.rank() == promotionPawnRank)
+			ConvertToPromotionMoves(Move(start, rightDiagonal), moves);
+		else
+			moves.push_back(Move(start, rightDiagonal));
+	}
 	return moves;
 }
 

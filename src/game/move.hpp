@@ -14,6 +14,7 @@ private:
 	Space _end = Space();
 	Piece _capture = Piece::None;
 	Space _passant_target = Space();
+	PieceType _promotion_flag = PieceType::None; // if this is not none, this should be a pawn trying to promote
 
 public:
 	inline Space start() const
@@ -32,6 +33,10 @@ public:
 	{
 		return _passant_target;
 	}
+	inline PieceType promotion_flag() const
+	{
+		return _promotion_flag;
+	}
 
 	inline void set_capture(Piece capture)
 	{
@@ -41,9 +46,14 @@ public:
 	{
 		_passant_target = passant_target;
 	}
+	inline void set_promotion_flag(PieceType promotion_flag)
+	{
+		_promotion_flag = promotion_flag;
+	}
 
 	// https://en.wikipedia.org/wiki/Universal_Chess_Interface#Design
 	// TODO: maybe a version that uses algebraic notation?
+	Move(Space start, Space end, PieceType promotionFlag) : _start(start), _end(end), _promotion_flag(promotionFlag) {}
 	Move(Space start, Space end) : _start(start), _end(end) {}
 	Move(std::string uciMove);
 	Move() = default;
@@ -52,7 +62,7 @@ public:
 
 	inline bool operator==(const Move &other) const
 	{
-		return (*this).start() == other.start() && (*this).end() == other.end();
+		return start() == other.start() && end() == other.end() && promotion_flag() == other.promotion_flag();
 	}
 };
 
