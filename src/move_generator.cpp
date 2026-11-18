@@ -42,8 +42,8 @@ std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start)
 
 	Space forwardOne = start + Space(0, dir);
 	Space forwardTwo = start + Space(0, dir * 2);
-	Space leftDiagonal = start + Space(-1, 1);
-	Space rightDiagonal = start + Space(1, 1);
+	Space leftDiagonal = forwardOne + Space(-1, 0);
+	Space rightDiagonal = forwardOne + Space(1, 0);
 
 	std::vector<Move> moves;
 
@@ -62,7 +62,7 @@ std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start)
 		moves.push_back(move);
 	}
 
-	bool captureOnLeft = !board.IsSpaceEmpty(leftDiagonal) && board.PieceOnSpace(leftDiagonal).color() != color;
+	bool captureOnLeft = leftDiagonal.is_valid() && !board.IsSpaceEmpty(leftDiagonal) && board.PieceOnSpace(leftDiagonal).color() != color;
 	if (leftDiagonal.is_valid() && (board.passant_target() == leftDiagonal || captureOnLeft))
 	{
 		if (leftDiagonal.rank() == promotionPawnRank)
@@ -71,7 +71,7 @@ std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start)
 			moves.push_back(Move(start, leftDiagonal));
 	}
 
-	bool captureOnRight = !board.IsSpaceEmpty(rightDiagonal) && board.PieceOnSpace(rightDiagonal).color() != color;
+	bool captureOnRight = rightDiagonal.is_valid() && !board.IsSpaceEmpty(rightDiagonal) && board.PieceOnSpace(rightDiagonal).color() != color;
 	if (rightDiagonal.is_valid() && (board.passant_target() == rightDiagonal || captureOnRight))
 	{
 		if (rightDiagonal.rank() == promotionPawnRank)

@@ -61,7 +61,7 @@ void TerminalUi::PlayTurn()
 		if (!madeMove)
 			std::cout << "Move invalid, try again" << std::endl;
 	}
-	catch (const char *msg)
+	catch (std::invalid_argument e)
 	{
 	}
 
