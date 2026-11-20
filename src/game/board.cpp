@@ -40,26 +40,26 @@ Board::Board(std::string fen)
 		}
 
 		Piece piece = Piece::pieceFromChar(cur);
-		state_[ind] = piece;
+		_state[ind] = piece;
 		ind++;
 	}
 
 	// field 1: turn
-	current_turn_ = fields[1] == "w" ? PieceColor::White : PieceColor::Black;
+	_current_turn = fields[1] == "w" ? PieceColor::White : PieceColor::Black;
 
 	// field 2: castling rights
 	if (fields[2] != "-")
 	{
-		castling_rights_[0] = fields[2].find('Q');
-		castling_rights_[1] = fields[2].find('K');
-		castling_rights_[2] = fields[2].find('q');
-		castling_rights_[3] = fields[2].find('k');
+		_castling_rights[0] = fields[2].find('Q');
+		_castling_rights[1] = fields[2].find('K');
+		_castling_rights[2] = fields[2].find('q');
+		_castling_rights[3] = fields[2].find('k');
 	}
 
 	// field 3: en passant target
 	if (fields[3] != "-")
 	{
-		passant_target_ = Space(fields[3]);
+		_passant_target = Space(fields[3]);
 	}
 
 	// field 4: halfmove clock
@@ -71,27 +71,27 @@ Board::Board(std::string fen)
 
 std::array<Piece, 64> Board::state() const
 {
-	return state_;
+	return _state;
 }
 
 std::array<bool, 4> Board::castling_rights() const
 {
-	return castling_rights_;
+	return _castling_rights;
 }
 
 PieceColor Board::current_turn() const
 {
-	return current_turn_;
+	return _current_turn;
 }
 
 Space Board::passant_target() const
 {
-	return passant_target_;
+	return _passant_target;
 }
 
 Piece Board::PieceOnSpace(Space space)
 {
-	return state_[space.ind()];
+	return _state[space.ind()];
 }
 
 bool Board::IsSpaceEmpty(Space space)
@@ -107,7 +107,7 @@ bool Board::CurrentlyInCheck(PieceColor kingColor)
 	Space kingSpace = Space(0, 0);
 	for (int i = 0; i < 64; i++)
 	{
-		if (state_[i].type() == PieceType::King && state_[i].color() == kingColor)
+		if (_state[i].type() == PieceType::King && _state[i].color() == kingColor)
 		{
 			kingSpace = Space(i);
 		}
@@ -118,9 +118,9 @@ bool Board::CurrentlyInCheck(PieceColor kingColor)
 	// we loop through the diagonals and straights seperately to make writing this a bit easier
 	for (auto move : MoveGenerator::BishopMovesFrom(*this, kingSpace))
 	{
-		Piece attacker = state_[move.end().ind()];
+		Piece attacker = _state[move.end().ind()];
 
-		int attackingPawnDir = current_turn_ == PieceColor::Black ? 1 : -1;
+		int attackingPawnDir = _current_turn == PieceColor::Black ? 1 : -1;
 		bool onAdjacentFile = abs(move.end().file() - kingSpace.file()) == 1;
 		bool onPawnAttackSquare = onAdjacentFile && (kingSpace.rank() - move.end().rank()) == attackingPawnDir;
 		if (attacker.type() == PieceType::Pawn && onPawnAttackSquare)
@@ -130,14 +130,14 @@ bool Board::CurrentlyInCheck(PieceColor kingColor)
 	}
 	for (auto move : MoveGenerator::RookMovesFrom(*this, kingSpace))
 	{
-		Piece attacker = state_[move.end().ind()];
+		Piece attacker = _state[move.end().ind()];
 
 		if (attacker.type() == PieceType::Rook || attacker.type() == PieceType::Queen)
 			return true;
 	}
 	for (auto move : MoveGenerator::KnightMovesFrom(*this, kingSpace))
 	{
-		Piece attacker = state_[move.end().ind()];
+		Piece attacker = _state[move.end().ind()];
 
 		if (attacker.type() == PieceType::Knight)
 			return true;
@@ -146,28 +146,94 @@ bool Board::CurrentlyInCheck(PieceColor kingColor)
 	return false;
 }
 
-// this function makes the assumption that the given move is psuedolegal
+// checking castling rights allows us to make the the following assumptions:
+//  - the rook is still alive
+//  - neither the rook nor king has moved
+// so we need to check that
+bool Board::IsMoveCastling(Move move)
+{
+	bool kingOnStart = PieceOnSpace(move.start()) == Piece(PieceType::King, _current_turn);
+
+	int castleRank = _current_turn == PieceColor::White ? 0 : 7;
+	bool validEndPoint = move.end() == Space(1, castleRank) || move.end() == Space(6, castleRank);
+
+	return kingOnStart && validEndPoint;
+}
+
+// this function makes the assumption that the given move is legal
 void Board::ApplyMove(Move move)
 {
-	// TODO:
-	// Update castling rights when a castle is made
-	// Update en passant whenever that happens
-	// Handle promotions
-
-	Piece capturedPiece = state_[move.end().ind()];
+	Piece capturedPiece = _state[move.end().ind()];
 	move.set_capture(capturedPiece);
 
-	state_[move.end().ind()] = state_[move.start().ind()];
-	state_[move.start().ind()] = Piece::None;
-	passant_target_ = move.passant_target();
+	if (IsMoveCastling(move))
+	{
+		Space leftCastle = Space(0, _castle_rank());
+		Space rightCastle = Space(6, _castle_rank());
+		if (move.end() == leftCastle)
+		{
+			_state[move.end().ind()] = _state[move.start().ind()];
+			_state[move.start().ind()] = Piece::None;
+			_state[(leftCastle + Space(1, 0)).ind()] = _state[(leftCastle + Space(-1, 0)).ind()];
+			_state[(leftCastle + Space(-1, 0)).ind()] = Piece::None;
+		}
+		if (move.end() == rightCastle)
+		{
+			_state[move.end().ind()] = _state[move.start().ind()];
+			_state[move.start().ind()] = Piece::None;
+			_state[(rightCastle + Space(-1, 0)).ind()] = _state[(rightCastle + Space(1, 0)).ind()];
+			_state[(rightCastle + Space(1, 0)).ind()] = Piece::None;
+		}
+	}
+
+	// castling rights mean that both the rook and king for that side have not moved
+	// and have not been captured
+	// remove castling rights if we move our king (castle or otherwise)
+	if (PieceOnSpace(move.start()) == Piece(PieceType::King, _current_turn))
+	{
+		if (_current_turn == PieceColor::White)
+		{
+			if (_castling_rights[0])
+				move.set_castling_change(0);
+			if (_castling_rights[1])
+				move.set_castling_change(1);
+		}
+		else
+		{
+			if (_castling_rights[2])
+				move.set_castling_change(2);
+			if (_castling_rights[3])
+				move.set_castling_change(3);
+		}
+	}
+	// remove castling rights on a side if we move our rook
+	int castleInd = _current_turn == PieceColor::White ? 0 : 2;
+	for (int i = castleInd; i < castleInd + 2; i++)
+	{
+		if (!_castling_rights[i] || move.start() != Board::castling_rook_spaces[i])
+			continue;
+		move.set_castling_change(i);
+	}
+	// remove opponents castling rights if a piece is taken
+	// remember we don't need to check if its rook because it having castling r
+	for (int i = (castleInd + 2) % 4; i < (castleInd + 2) % 4 + 2; i++)
+	{
+		if (!_castling_rights[i] || move.end() != Board::castling_rook_spaces[i])
+			continue;
+		move.set_castling_change(i);
+	}
+
+	_state[move.end().ind()] = _state[move.start().ind()];
+	_state[move.start().ind()] = Piece::None;
+	_passant_target = move.passant_target();
 
 	if (move.promotion_flag() != PieceType::None)
 	{
-		state_[move.end().ind()] = Piece(move.promotion_flag(), current_turn_);
+		_state[move.end().ind()] = Piece(move.promotion_flag(), _current_turn);
 	}
 
 	past_moves.push_back(move);
-	current_turn_ = OppositeColor(current_turn_);
+	_current_turn = OppositeColor(_current_turn);
 }
 
 void Board::UnapplyMove()
@@ -175,27 +241,27 @@ void Board::UnapplyMove()
 	Move lastMove = past_moves.back();
 
 	// default case
-	state_[lastMove.start().ind()] = state_[lastMove.end().ind()]; // move the piece back to start
-	state_[lastMove.end().ind()] = lastMove.capture();			   // add the captured piece back (if any)
+	_state[lastMove.start().ind()] = _state[lastMove.end().ind()]; // move the piece back to start
+	_state[lastMove.end().ind()] = lastMove.capture();			   // add the captured piece back (if any)
 	if (past_moves.size() > 1)									   // revert back to previous passant target
-		passant_target_ = past_moves[past_moves.size() - 2].passant_target();
+		_passant_target = past_moves[past_moves.size() - 2].passant_target();
 	else
-		passant_target_ = Space();
+		_passant_target = Space();
 
 	// if it was promoted, we have to revert it back to a pawn
 	if (lastMove.promotion_flag() != PieceType::None)
 	{
-		state_[lastMove.start().ind()] = Piece(PieceType::Pawn, current_turn_);
+		_state[lastMove.start().ind()] = Piece(PieceType::Pawn, _current_turn);
 	}
 
 	past_moves.pop_back();
-	current_turn_ = OppositeColor(current_turn_);
+	_current_turn = OppositeColor(_current_turn);
 }
 
 // TODO: check if current turn king will be in check, otherwise then we're good
 bool Board::IsBoardLegal()
 {
-	if (CurrentlyInCheck(OppositeColor(current_turn_)))
+	if (CurrentlyInCheck(OppositeColor(_current_turn)))
 	{
 		// std::cout << "Cannot make move, currently in check" << std::endl;
 		return false;
@@ -216,11 +282,10 @@ bool Board::IsMoveLegal(Move move)
 	return true;
 }
 
-// assumes this move is pseudolegal
 bool Board::MakeMove(Move move)
 {
 	// basic sanity checks
-	if (move.start().is_valid() && move.end().is_valid() && state_[move.start().ind()].color() != current_turn_ || state_[move.end().ind()].color() == current_turn_)
+	if (move.start().is_valid() && move.end().is_valid() && _state[move.start().ind()].color() != _current_turn || _state[move.end().ind()].color() == _current_turn)
 	{
 		return false;
 	}
@@ -258,7 +323,7 @@ std::string Board::ToString()
 		ss << Space::kRankChars[i] << " ";
 		for (int j = 0; j < 8; j++)
 		{
-			ss << Piece::charFromPiece(state_[i * 8 + j]) << " ";
+			ss << Piece::charFromPiece(_state[i * 8 + j]) << " ";
 		}
 		ss << '\n';
 	}

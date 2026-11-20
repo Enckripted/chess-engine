@@ -107,6 +107,21 @@ std::vector<Move> MoveGenerator::KingMovesFrom(Board &board, Space start)
 		if (end.is_valid() && board.PieceOnSpace(end).color() != color)
 			moves.push_back(Move(start, end));
 	}
+
+	// check castling options (if a spot has rights that means king has not moved and neither has that rook)
+	int rank = color == PieceColor::White ? 0 : 7;
+	int checkInd = (color == PieceColor::White ? 0 : 1) * 2;
+
+	// we don't need to check any spots the king is trying to move to are in check, those will be checked in is move legal
+	bool inCheck = board.CurrentlyInCheck(color);
+	bool leftLaneEmpty = board.IsSpaceEmpty(Space(1, rank)) && board.IsSpaceEmpty(Space(2, rank)) && board.IsSpaceEmpty(Space(3, rank));
+	bool rightLaneEmpty = board.IsSpaceEmpty(Space(5, rank)) && board.IsSpaceEmpty(Space(6, rank));
+
+	if (!inCheck && board.castling_rights()[checkInd] && leftLaneEmpty)
+		moves.push_back(Move(start, Space(2, rank)));
+	if (!inCheck && board.castling_rights()[checkInd + 1] && rightLaneEmpty)
+		moves.push_back(Move(start, Space(7, rank)));
+
 	return moves;
 }
 

@@ -14,6 +14,7 @@ private:
 	Space _end = Space();
 	Piece _capture = Piece::None;
 	Space _passant_target = Space();
+	std::array<bool, 4> _castling_change = {1, 1, 1, 1};
 	PieceType _promotion_flag = PieceType::None; // if this is not none, this should be a pawn trying to promote
 
 public:
@@ -33,6 +34,10 @@ public:
 	{
 		return _passant_target;
 	}
+	inline std::array<bool, 4> castling_change() const
+	{
+		return _castling_change;
+	}
 	inline PieceType promotion_flag() const
 	{
 		return _promotion_flag;
@@ -49,6 +54,19 @@ public:
 	inline void set_promotion_flag(PieceType promotion_flag)
 	{
 		_promotion_flag = promotion_flag;
+	}
+
+	inline void set_castling_change(std::array<bool, 4> castling_change)
+	{
+		_castling_change = castling_change;
+	}
+	inline void set_castling_change(bool a, bool b, bool c, bool d)
+	{
+		_castling_change = {a, b, c, d};
+	}
+	inline void set_castling_change(int i)
+	{
+		_castling_change[i] = true;
 	}
 
 	// https://en.wikipedia.org/wiki/Universal_Chess_Interface#Design

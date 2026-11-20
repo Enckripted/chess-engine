@@ -66,6 +66,10 @@ public:
 	{
 		return rank() == other.rank() && file() == other.file();
 	}
+	inline bool operator!=(const Space &other) const
+	{
+		return !(*this == other);
+	}
 
 	friend Space operator+(Space space, const Space &other)
 	{
