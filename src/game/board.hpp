@@ -40,8 +40,6 @@ private:
 
 	void UpdateMoveCastlingRights(Move &move);
 	void MovePiece(Space const &start, Space const &end);
-	void ApplyMove(Move move); // applies a move without regard to legality
-	void UnapplyMove();		   // reverses the last move made
 
 public:
 	// TODO: make these inline
@@ -60,6 +58,8 @@ public:
 
 	bool IsBoardLegal();		 // check if the current turn's king will be in check
 	bool IsMoveLegal(Move move); // check if making this move would make IsBoardLegal false
+	void ApplyMove(Move move);	 // applies a move without regard to legality
+	void UnapplyMove();			 // reverses the last move made
 	bool MakeMove(Move move);	 // public facing move making, checks for illegal moves past just a future invalid board state
 	void UnmakeMove();			 // public wrapper that reverses the last move made
 

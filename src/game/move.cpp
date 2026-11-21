@@ -24,5 +24,8 @@ Move::Move(std::string uciMove)
 
 std::string Move::ToString()
 {
-	return _start.ToStringNotation() + _end.ToStringNotation();
+	std::string cur = _start.ToStringNotation() + _end.ToStringNotation();
+	if (_promotion_flag != PieceType::None)
+		cur += Piece::charFromPiece(Piece(_promotion_flag, PieceColor::Black));
+	return cur;
 }

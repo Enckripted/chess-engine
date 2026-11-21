@@ -108,11 +108,12 @@ bool Board::SquareThreatenedByCheck(Space space, PieceColor color)
 	// super slow: generate all possible piece moves from that position (pawns capture in lane as bishops)
 	// then go through all valid moves, if an enemy piece is on them of the corresponding type, then we are in check
 	// we loop through the diagonals and straights seperately to make writing this a bit easier
+
 	for (auto move : MoveGenerator::BishopMovesFrom(*this, space, color))
 	{
 		Piece attacker = _state[move.end().ind()];
 
-		int attackingPawnDir = _current_turn == PieceColor::Black ? 1 : -1;
+		int attackingPawnDir = color == PieceColor::Black ? 1 : -1;
 		bool onAdjacentFile = abs(move.end().file() - space.file()) == 1;
 		bool onPawnAttackSquare = onAdjacentFile && (space.rank() - move.end().rank()) == attackingPawnDir;
 		if (attacker.type() == PieceType::Pawn && onPawnAttackSquare)
@@ -158,12 +159,13 @@ void Board::UpdateMoveCastlingRights(Move &move)
 	int oppCastleInd = (castleInd + 2) % 4;
 	int oppCastleRank = castle_rank(OppositeColor(_current_turn));
 
-	// can't castle again after castling
-	if (move.castling_flag() != CastleFlag::None)
+	// can't castle again after castling or moving king
+	if (move.castling_flag() != CastleFlag::None || move.start() == Space(4, castleRank))
 	{
 		move.set_castling_change(castleInd);
 		move.set_castling_change(castleInd + 1);
 	}
+
 	// can't castle on a side that their rook moves
 	if (_castling_rights[castleInd] && move.start() == Space(0, castleRank))
 	{
@@ -248,10 +250,10 @@ void Board::UnapplyMove()
 	else
 		_passant_target = Space();
 
-	// if it was promoted, we have to revert it back to a pawn
+	// if it was promoted, we have to revert it back to a pawn (from the opposite color since it was their turn then)
 	if (move.promotion_flag() != PieceType::None)
 	{
-		_state[move.start().ind()] = Piece(PieceType::Pawn, _current_turn);
+		_state[move.start().ind()] = Piece(PieceType::Pawn, OppositeColor(_current_turn));
 	}
 
 	ApplyCastlingChange(move.castling_change(), false);
@@ -281,6 +283,7 @@ bool Board::IsMoveLegal(Move move)
 	{
 		if (Move::GetCastlingTypeInd(move) == -1)
 		{
+			std::cout << ToString() << std::endl;
 			std::cout << move.ToString() << std::endl;
 		}
 		assert(Move::GetCastlingTypeInd(move) != -1); // temporarily for debugging
