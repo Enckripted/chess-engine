@@ -12,7 +12,7 @@ class Board
 {
 private:
 	std::array<Piece, 64> _state{};
-	std::array<bool, 4> _castling_rights = {1, 1, 1, 1};
+	std::array<bool, 4> _castling_rights{};
 	PieceColor _current_turn = PieceColor::White;
 
 	// if this is -1, then en passant cannot be done on this turn
@@ -21,20 +21,25 @@ private:
 	int halfmoves = 0;
 	int fullmove = 1;
 
-	std::vector<Move> past_moves;
-
-	static inline const std::array<Space, 4> castling_rook_spaces{
-		Space{0, 0}, {0, 7}, {7, 0}, {7, 7}};
+	std::vector<Move> past_moves{};
 
 	inline PieceColor OppositeColor(PieceColor color)
 	{
 		return color == PieceColor::White ? PieceColor::Black : PieceColor::White;
 	}
-	inline int _castle_rank()
+	inline int castle_rank(PieceColor color)
 	{
-		return _current_turn == PieceColor::White ? 0 : 7;
+		return color == PieceColor::White ? 0 : 7;
+	}
+	inline void ApplyCastlingChange(std::array<bool, 4> change, bool forward)
+	{
+		for (int i = 0; i < 4; i++)
+			if (change[i])
+				_castling_rights[i] = !forward;
 	}
 
+	void UpdateMoveCastlingRights(Move &move);
+	void MovePiece(Space const &start, Space const &end);
 	void ApplyMove(Move move); // applies a move without regard to legality
 	void UnapplyMove();		   // reverses the last move made
 
@@ -47,8 +52,8 @@ public:
 
 	Board(std::string fen);
 
+	bool SquareThreatenedByCheck(Space space, PieceColor color);
 	bool CurrentlyInCheck(PieceColor kingColor);
-	bool IsMoveCastling(Move move);
 
 	bool IsSpaceEmpty(Space space);
 	Piece PieceOnSpace(Space space);
