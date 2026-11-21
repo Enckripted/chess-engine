@@ -8,38 +8,38 @@
 #include "piece.hpp"
 #include "move.hpp"
 
-/*
-struct BoardMove
-{
-	Move move = Move("a1a1");
-	Piece capture;
-	std::array<bool, 4> castling_change{};
-	// just so we can go back, en passant gets set by the board when going forward
-	Space prev_passant;
-
-	BoardMove(Move move_, Piece capture_, Space prev_passant_, std::array<bool, 4> castling_change_)
-		: move(move_), capture(capture_), castling_change(castling_change_), prev_passant(prev_passant_) {}
-};*/
-
 class Board
 {
 private:
-	std::array<Piece, 64> state_{};
-	std::array<bool, 4> castling_rights_ = {1, 1, 1, 1};
-	PieceColor current_turn_ = PieceColor::White;
+	std::array<Piece, 64> _state{};
+	std::array<bool, 4> _castling_rights{};
+	PieceColor _current_turn = PieceColor::White;
 
 	// if this is -1, then en passant cannot be done on this turn
-	Space passant_target_ = Space(-1, -1);
+	Space _passant_target = Space(-1, -1);
 
 	int halfmoves = 0;
 	int fullmove = 1;
 
-	std::vector<Move> past_moves;
+	std::vector<Move> past_moves{};
 
 	inline PieceColor OppositeColor(PieceColor color)
 	{
 		return color == PieceColor::White ? PieceColor::Black : PieceColor::White;
 	}
+	inline int castle_rank(PieceColor color)
+	{
+		return color == PieceColor::White ? 0 : 7;
+	}
+	inline void ApplyCastlingChange(std::array<bool, 4> change, bool forward)
+	{
+		for (int i = 0; i < 4; i++)
+			if (change[i])
+				_castling_rights[i] = !forward;
+	}
+
+	void UpdateMoveCastlingRights(Move &move);
+	void MovePiece(Space const &start, Space const &end);
 	void ApplyMove(Move move); // applies a move without regard to legality
 	void UnapplyMove();		   // reverses the last move made
 
@@ -52,6 +52,7 @@ public:
 
 	Board(std::string fen);
 
+	bool SquareThreatenedByCheck(Space space, PieceColor color);
 	bool CurrentlyInCheck(PieceColor kingColor);
 
 	bool IsSpaceEmpty(Space space);

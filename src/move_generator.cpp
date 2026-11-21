@@ -4,10 +4,8 @@
 
 #include "game/board.hpp"
 
-void MoveGenerator::MoveInDir(Board &board, Space start, Space dir, std::vector<Move> &out)
+void MoveGenerator::MoveInDir(Board &board, Space start, Space dir, PieceColor color, std::vector<Move> &out)
 {
-	PieceColor color = board.state()[start.ind()].color();
-
 	Space cur = start;
 	while (cur.is_valid())
 	{
@@ -33,9 +31,8 @@ void MoveGenerator::ConvertToPromotionMoves(Move move, std::vector<Move> &out)
 		out.push_back(Move(move.start(), move.end(), promotionType));
 }
 
-std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start)
+std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start, PieceColor color)
 {
-	PieceColor color = board.state()[start.ind()].color();
 	int dir = color == PieceColor::White ? 1 : -1;
 	int initialPawnRank = color == PieceColor::White ? 1 : 6;
 	int promotionPawnRank = color == PieceColor::White ? 7 : 0;
@@ -82,10 +79,8 @@ std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start)
 	return moves;
 }
 
-std::vector<Move> MoveGenerator::KnightMovesFrom(Board &board, Space start)
+std::vector<Move> MoveGenerator::KnightMovesFrom(Board &board, Space start, PieceColor color)
 {
-	PieceColor color = board.state()[start.ind()].color();
-
 	std::vector<Move> moves;
 	for (auto moveDir : knight_moves)
 	{
@@ -96,9 +91,9 @@ std::vector<Move> MoveGenerator::KnightMovesFrom(Board &board, Space start)
 	return moves;
 }
 
-std::vector<Move> MoveGenerator::KingMovesFrom(Board &board, Space start)
+std::vector<Move> MoveGenerator::KingMovesFrom(Board &board, Space start, PieceColor color)
 {
-	PieceColor color = board.state()[start.ind()].color();
+	Piece king = board.PieceOnSpace(start);
 
 	std::vector<Move> moves;
 	for (auto moveDir : king_moves)
@@ -107,62 +102,120 @@ std::vector<Move> MoveGenerator::KingMovesFrom(Board &board, Space start)
 		if (end.is_valid() && board.PieceOnSpace(end).color() != color)
 			moves.push_back(Move(start, end));
 	}
+
+	if (king.type() != PieceType::King || king.color() != color)
+		return moves;
+
+	int castleRank = color == PieceColor::White ? 0 : 7;
+	int rightsIndex = color == PieceColor::White ? 0 : 2;
+	auto castlingRights = board.castling_rights();
+
+	bool kingsideFree = board.IsSpaceEmpty(Space(5, castleRank)) && board.IsSpaceEmpty(Space(6, castleRank));
+	if (castlingRights[rightsIndex + 1] && kingsideFree)
+	{
+		Move castle(start, Space(6, castleRank));
+		castle.set_castle_flag(CastleFlag::CastleKingside);
+		moves.push_back(castle);
+	}
+
+	bool queensideFree = board.IsSpaceEmpty(Space(1, castleRank)) && board.IsSpaceEmpty(Space(2, castleRank)) && board.IsSpaceEmpty(Space(3, castleRank));
+	if (castlingRights[rightsIndex] && queensideFree)
+	{
+		Move castle(start, Space(2, castleRank));
+		castle.set_castle_flag(CastleFlag::CastleQueenside);
+		moves.push_back(castle);
+	}
 	return moves;
 }
 
-std::vector<Move> MoveGenerator::RookMovesFrom(Board &board, Space start)
+std::vector<Move> MoveGenerator::RookMovesFrom(Board &board, Space start, PieceColor color)
 {
 	std::vector<Move> moves;
 	for (auto dir : rook_dirs)
 	{
-		MoveInDir(board, start, dir, moves);
+		MoveInDir(board, start, dir, color, moves);
 	}
 	return moves;
 }
 
-std::vector<Move> MoveGenerator::BishopMovesFrom(Board &board, Space start)
+std::vector<Move> MoveGenerator::BishopMovesFrom(Board &board, Space start, PieceColor color)
 {
 	std::vector<Move> moves;
 	for (auto dir : bishop_dirs)
 	{
-		MoveInDir(board, start, dir, moves);
+		MoveInDir(board, start, dir, color, moves);
 	}
 	return moves;
 }
 
-std::vector<Move> MoveGenerator::QueenMovesFrom(Board &board, Space start)
+std::vector<Move> MoveGenerator::QueenMovesFrom(Board &board, Space start, PieceColor color)
 {
 	std::vector<Move> moves;
 	for (auto dir : rook_dirs)
 	{
-		MoveInDir(board, start, dir, moves);
+		MoveInDir(board, start, dir, color, moves);
 	}
 	for (auto dir : bishop_dirs)
 	{
-		MoveInDir(board, start, dir, moves);
+		MoveInDir(board, start, dir, color, moves);
 	}
 	return moves;
 }
 
-std::vector<Move> MoveGenerator::MovesFrom(Board &board, Space start)
+std::vector<Move> MoveGenerator::MovesFrom(Board &board, Space start, PieceColor color)
 {
 	switch (board.state()[start.ind()].type())
 	{
 	case PieceType::Pawn:
-		return PawnMovesFrom(board, start);
+		return PawnMovesFrom(board, start, color);
 	case PieceType::Knight:
-		return KnightMovesFrom(board, start);
+		return KnightMovesFrom(board, start, color);
 	case PieceType::Bishop:
-		return BishopMovesFrom(board, start);
+		return BishopMovesFrom(board, start, color);
 	case PieceType::Rook:
-		return RookMovesFrom(board, start);
+		return RookMovesFrom(board, start, color);
 	case PieceType::Queen:
-		return QueenMovesFrom(board, start);
+		return QueenMovesFrom(board, start, color);
 	case PieceType::King:
-		return KingMovesFrom(board, start);
+		return KingMovesFrom(board, start, color);
 	default:
 		return {};
 	}
+}
+
+std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start)
+{
+	return PawnMovesFrom(board, start, board.PieceOnSpace(start).color());
+}
+
+std::vector<Move> MoveGenerator::KnightMovesFrom(Board &board, Space start)
+{
+	return KnightMovesFrom(board, start, board.PieceOnSpace(start).color());
+}
+
+std::vector<Move> MoveGenerator::BishopMovesFrom(Board &board, Space start)
+{
+	return BishopMovesFrom(board, start, board.PieceOnSpace(start).color());
+}
+
+std::vector<Move> MoveGenerator::RookMovesFrom(Board &board, Space start)
+{
+	return RookMovesFrom(board, start, board.PieceOnSpace(start).color());
+}
+
+std::vector<Move> MoveGenerator::QueenMovesFrom(Board &board, Space start)
+{
+	return QueenMovesFrom(board, start, board.PieceOnSpace(start).color());
+}
+
+std::vector<Move> MoveGenerator::KingMovesFrom(Board &board, Space start)
+{
+	return KingMovesFrom(board, start, board.PieceOnSpace(start).color());
+}
+
+std::vector<Move> MoveGenerator::MovesFrom(Board &board, Space start)
+{
+	return MovesFrom(board, start, board.PieceOnSpace(start).color());
 }
 
 void MoveGenerator::GenerateLegalMovesAt(Board &board, Space space, std::vector<Move> &out)
@@ -170,7 +223,7 @@ void MoveGenerator::GenerateLegalMovesAt(Board &board, Space space, std::vector<
 	if (board.PieceOnSpace(space).color() != board.current_turn())
 		return;
 
-	for (auto move : MovesFrom(board, space))
+	for (auto move : MovesFrom(board, space, board.current_turn()))
 		if (board.IsMoveLegal(move))
 			out.push_back(move);
 }
