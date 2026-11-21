@@ -5,6 +5,7 @@
 #include "game/board.hpp"
 #include "game/game_result.hpp"
 #include "move_generator.hpp"
+#include <argparse/argparse.hpp>
 
 #include "tui.hpp"
 
@@ -140,7 +141,7 @@ namespace
 	}
 }
 */
-int main()
+int main(int argc, char *argv[])
 {
 	/*
 	const std::array<CastleCase, 4> castles{{
