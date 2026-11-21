@@ -40,6 +40,8 @@ private:
 
 	void UpdateMoveCastlingRights(Move &move);
 	void MovePiece(Space const &start, Space const &end);
+	void AddPiece(Piece piece, Space space);
+	void RemovePieceAt(Space space);
 
 public:
 	// TODO: make these inline

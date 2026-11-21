@@ -8,6 +8,14 @@
 #include "piece.hpp"
 #include "space.hpp"
 
+enum class MoveFlag
+{
+	None,
+	Promotion,
+	Castling,
+	Passant
+};
+
 enum class CastleFlag
 {
 	None,
@@ -24,6 +32,7 @@ private:
 	Space _passant_target = Space();
 	std::array<bool, 4> _castling_change = {};
 
+	MoveFlag _flag = MoveFlag::None;
 	PieceType _promotion_flag = PieceType::None; // if this is not none, this should be a pawn trying to promote
 	CastleFlag _castling_flag = CastleFlag::None;
 
@@ -55,6 +64,10 @@ public:
 	{
 		return _castling_flag;
 	}
+	inline MoveFlag flag() const
+	{
+		return _flag;
+	}
 	inline auto castling_change() const
 	{
 		return _castling_change;
@@ -70,13 +83,19 @@ public:
 	}
 	inline void set_promotion_flag(PieceType promotion_flag)
 	{
-		assert(_castling_flag == CastleFlag::None);
+		_flag = MoveFlag::Promotion;
 		_promotion_flag = promotion_flag;
 	}
 	inline void set_castle_flag(CastleFlag castle_flag)
 	{
-		assert(_promotion_flag == PieceType::None);
+		_flag = MoveFlag::Castling;
 		_castling_flag = castle_flag;
+	}
+	inline void set_passant_flag()
+	{
+		bool diagonal = abs(_start.file() - _end.file()) == 1 && abs(_start.rank() - _end.rank()) == 1;
+		assert(diagonal);
+		_flag = MoveFlag::Passant;
 	}
 	inline void set_castling_change(int i)
 	{

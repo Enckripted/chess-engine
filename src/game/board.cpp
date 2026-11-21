@@ -189,18 +189,41 @@ void Board::UpdateMoveCastlingRights(Move &move)
 
 void Board::MovePiece(Space const &start, Space const &end)
 {
+	if (!IsSpaceEmpty(end))
+		RemovePieceAt(end);
 	_state[end.ind()] = _state[start.ind()];
 	_state[start.ind()] = Piece::None;
+}
+
+void Board::AddPiece(Piece piece, Space space)
+{
+	assert(IsSpaceEmpty(space));
+	_state[space.ind()] = piece;
+}
+
+void Board::RemovePieceAt(Space space)
+{
+	_state[space.ind()] = Piece::None;
 }
 
 // this function makes the assumption that the given move is psuedolegal
 void Board::ApplyMove(Move move)
 {
-	Piece capturedPiece = _state[move.end().ind()];
-	move.set_capture(capturedPiece);
+	Piece capturedPiece = PieceOnSpace(move.end());
 
 	if (move.castling_flag() == CastleFlag::None)
 	{
+		// special case of en passant, where we cant do a direct capture
+		if (move.flag() == MoveFlag::Passant)
+		{
+			assert(move.end() == _passant_target);
+
+			int attackingPawnDir = move.end().rank() - move.start().rank();
+			Space captureSpace = move.end() - Space(0, attackingPawnDir);
+			capturedPiece = PieceOnSpace(captureSpace);
+			RemovePieceAt(captureSpace);
+		}
+		move.set_capture(capturedPiece);
 		MovePiece(move.start(), move.end());
 	}
 	else
@@ -233,7 +256,15 @@ void Board::UnapplyMove()
 	if (move.castling_flag() == CastleFlag::None)
 	{
 		MovePiece(move.end(), move.start());
-		_state[move.end().ind()] = move.capture(); // add the captured piece back (if any)
+		if (move.flag() == MoveFlag::Passant)
+		{
+			int attackingPawnDir = move.end().rank() - move.start().rank();
+			AddPiece(move.capture(), move.end() - Space(0, attackingPawnDir));
+		}
+		else
+		{
+			AddPiece(move.capture(), move.end());
+		}
 	}
 	else
 	{
@@ -241,6 +272,7 @@ void Board::UnapplyMove()
 		// there is no need to put pieces back like above because these spaces should not be occupied anyways
 		Move rookMove = Move::rook_castling_moves[Move::GetCastlingTypeInd(move)];
 		Move kingMove = Move::king_castling_moves[Move::GetCastlingTypeInd(move)];
+
 		MovePiece(rookMove.end(), rookMove.start());
 		MovePiece(kingMove.end(), kingMove.start());
 	}
@@ -315,7 +347,6 @@ bool Board::IsMoveLegal(Move move)
 	return true;
 }
 
-// assumes this move is pseudolegal
 bool Board::MakeMove(Move move)
 {
 	// basic sanity checks

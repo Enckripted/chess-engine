@@ -62,19 +62,39 @@ std::vector<Move> MoveGenerator::PawnMovesFrom(Board &board, Space start, PieceC
 	bool captureOnLeft = leftDiagonal.is_valid() && !board.IsSpaceEmpty(leftDiagonal) && board.PieceOnSpace(leftDiagonal).color() != color;
 	if (leftDiagonal.is_valid() && (board.passant_target() == leftDiagonal || captureOnLeft))
 	{
+		Move move = Move(start, leftDiagonal);
 		if (leftDiagonal.rank() == promotionPawnRank)
-			ConvertToPromotionMoves(Move(start, leftDiagonal), moves);
+		{
+			ConvertToPromotionMoves(move, moves);
+		}
+		else if (board.passant_target() == leftDiagonal && !captureOnLeft)
+		{
+			move.set_passant_flag();
+			moves.push_back(move);
+		}
 		else
-			moves.push_back(Move(start, leftDiagonal));
+		{
+			moves.push_back(move);
+		}
 	}
 
 	bool captureOnRight = rightDiagonal.is_valid() && !board.IsSpaceEmpty(rightDiagonal) && board.PieceOnSpace(rightDiagonal).color() != color;
 	if (rightDiagonal.is_valid() && (board.passant_target() == rightDiagonal || captureOnRight))
 	{
+		Move move = Move(start, rightDiagonal);
 		if (rightDiagonal.rank() == promotionPawnRank)
-			ConvertToPromotionMoves(Move(start, rightDiagonal), moves);
+		{
+			ConvertToPromotionMoves(move, moves);
+		}
+		else if (board.passant_target() == rightDiagonal && !captureOnRight)
+		{
+			move.set_passant_flag();
+			moves.push_back(move);
+		}
 		else
-			moves.push_back(Move(start, rightDiagonal));
+		{
+			moves.push_back(move);
+		}
 	}
 	return moves;
 }

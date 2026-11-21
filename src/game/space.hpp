@@ -62,6 +62,12 @@ public:
 		_file += other.file();
 		return *this;
 	}
+	inline Space &operator-=(const Space &other)
+	{
+		_rank -= other.rank();
+		_file -= other.file();
+		return *this;
+	}
 	inline bool operator==(const Space &other) const
 	{
 		return rank() == other.rank() && file() == other.file();
@@ -74,6 +80,11 @@ public:
 	friend Space operator+(Space space, const Space &other)
 	{
 		space += other;
+		return space;
+	};
+	friend Space operator-(Space space, const Space &other)
+	{
+		space -= other;
 		return space;
 	};
 };
