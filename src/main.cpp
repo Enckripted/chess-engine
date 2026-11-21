@@ -2,14 +2,11 @@
 #include <iostream>
 #include <vector>
 
-#include "game/board.hpp"
-#include "game/game_result.hpp"
-#include "move_generator.hpp"
 #include <argparse/argparse.hpp>
 
+#include "perft.hpp"
 #include "tui.hpp"
 
-bool dogame = true;
 // gen ai castle tests
 /*
 namespace
@@ -143,6 +140,39 @@ namespace
 */
 int main(int argc, char *argv[])
 {
+	argparse::ArgumentParser program("chess-engine");
+
+	argparse::ArgumentParser perftCommand("perft");
+	perftCommand.add_description("Runs the default performance test suite for move generation.");
+
+	argparse::ArgumentParser graphicsCommand("tui");
+	perftCommand.add_description("Runs the graphical mode of the engine. Defaults to human playing white.");
+
+	program.add_subparser(perftCommand);
+	program.add_subparser(graphicsCommand);
+
+	try
+	{
+		program.parse_args(argc, argv);
+	}
+	catch (const std::exception &err)
+	{
+		std::cerr << err.what() << std::endl;
+		std::cerr << program;
+		std::exit(1);
+	}
+
+	if (program.is_subcommand_used("perft"))
+	{
+		RunPerftSuite();
+	}
+	else if (program.is_subcommand_used("tui"))
+	{
+		auto t = TerminalUi();
+		t.StartGame();
+	}
+	return 0;
+
 	/*
 	const std::array<CastleCase, 4> castles{{
 		{true, true},
@@ -160,11 +190,4 @@ int main(int argc, char *argv[])
 			return 1;
 	}
 	*/
-	if (!dogame)
-		return 0;
-
-	// this will get a makeover at some point
-	auto t = TerminalUi();
-	t.StartGame();
-	return 0;
 }

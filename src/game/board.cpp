@@ -13,14 +13,14 @@ constexpr bool charIsInt(char c)
 // TODO: maybe add a check for invalid boards?
 Board::Board(std::string fen)
 {
-	std::vector<std::string> fields(6);
+	std::vector<std::string> fields;
 	int pos = 0;
-	for (int i = 0; i < 6; i++)
+	while (fen.find(" ", pos) != std::string::npos)
 	{
 		int f = fen.find(" ", pos);
 		if (f == fen.npos)
 			f = fen.size();
-		fields[i] = fen.substr(pos, f - pos);
+		fields.push_back(fen.substr(pos, f - pos));
 		pos = f + 1;
 	}
 
@@ -57,16 +57,18 @@ Board::Board(std::string fen)
 	}
 
 	// field 3: en passant target
-	if (fields[3] != "-")
+	if (fields.size() >= 4 && fields[3] != "-")
 	{
 		_passant_target = Space(fields[3]);
 	}
 
 	// field 4: halfmove clock
-	halfmoves = std::stoi(fields[4]);
+	if (fields.size() >= 5)
+		halfmoves = std::stoi(fields[4]);
 
 	// field 5: fullmoves
-	fullmove = std::stoi(fields[5]);
+	if (fields.size() >= 6)
+		fullmove = std::stoi(fields[5]);
 }
 
 std::array<Piece, 64> Board::state() const
@@ -204,8 +206,6 @@ void Board::ApplyMove(Move move)
 		assert(Move::GetCastlingTypeInd(move) != -1);
 		Move rookMove = Move::rook_castling_moves[Move::GetCastlingTypeInd(move)];
 		Move kingMove = Move::king_castling_moves[Move::GetCastlingTypeInd(move)];
-		std::cout << "rook move " << rookMove.ToString() << std::endl;
-		std::cout << "king move " << kingMove.ToString() << std::endl;
 		MovePiece(rookMove.start(), rookMove.end());
 		MovePiece(kingMove.start(), kingMove.end());
 	}
@@ -260,6 +260,11 @@ void Board::UnapplyMove()
 	_current_turn = OppositeColor(_current_turn);
 }
 
+void Board::UnmakeMove()
+{
+	UnapplyMove();
+}
+
 bool Board::IsBoardLegal()
 {
 	if (CurrentlyInCheck(OppositeColor(_current_turn)))
@@ -274,6 +279,12 @@ bool Board::IsMoveLegal(Move move)
 {
 	if (move.castling_flag() != CastleFlag::None)
 	{
+		if (Move::GetCastlingTypeInd(move) == -1)
+		{
+			std::cout << move.ToString() << std::endl;
+		}
+		assert(Move::GetCastlingTypeInd(move) != -1); // temporarily for debugging
+
 		Move kingMove = Move::king_castling_moves[Move::GetCastlingTypeInd(move)];
 		int diff = kingMove.end().file() - kingMove.start().file();
 		int dir = abs(diff) / diff;
@@ -282,12 +293,10 @@ bool Board::IsMoveLegal(Move move)
 		// so we just need to look for checks on the start square and second square in the movement
 		Space cur = kingMove.start();
 		Space next = cur + Space(dir, 0);
-		std::cout << ToString() << std::endl;
-		std::cout << "check " << cur.ToString() << " " << next.ToString() << std::endl;
+
 		bool threatened = SquareThreatenedByCheck(cur, _current_turn) || SquareThreatenedByCheck(next, _current_turn);
 		if (threatened)
 		{
-			std::cout << "threatened by check on castle squares" << std::endl;
 			return false;
 		}
 	}

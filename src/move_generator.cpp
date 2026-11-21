@@ -110,6 +110,14 @@ std::vector<Move> MoveGenerator::KingMovesFrom(Board &board, Space start, PieceC
 	int rightsIndex = color == PieceColor::White ? 0 : 2;
 	auto castlingRights = board.castling_rights();
 
+	bool queensideFree = board.IsSpaceEmpty(Space(1, castleRank)) && board.IsSpaceEmpty(Space(2, castleRank)) && board.IsSpaceEmpty(Space(3, castleRank));
+	if (castlingRights[rightsIndex] && queensideFree)
+	{
+		Move castle(start, Space(2, castleRank));
+		castle.set_castle_flag(CastleFlag::CastleQueenside);
+		moves.push_back(castle);
+	}
+
 	bool kingsideFree = board.IsSpaceEmpty(Space(5, castleRank)) && board.IsSpaceEmpty(Space(6, castleRank));
 	if (castlingRights[rightsIndex + 1] && kingsideFree)
 	{
@@ -118,13 +126,6 @@ std::vector<Move> MoveGenerator::KingMovesFrom(Board &board, Space start, PieceC
 		moves.push_back(castle);
 	}
 
-	bool queensideFree = board.IsSpaceEmpty(Space(1, castleRank)) && board.IsSpaceEmpty(Space(2, castleRank)) && board.IsSpaceEmpty(Space(3, castleRank));
-	if (castlingRights[rightsIndex] && queensideFree)
-	{
-		Move castle(start, Space(2, castleRank));
-		castle.set_castle_flag(CastleFlag::CastleQueenside);
-		moves.push_back(castle);
-	}
 	return moves;
 }
 

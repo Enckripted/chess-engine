@@ -61,6 +61,7 @@ public:
 	bool IsBoardLegal();		 // check if the current turn's king will be in check
 	bool IsMoveLegal(Move move); // check if making this move would make IsBoardLegal false
 	bool MakeMove(Move move);	 // public facing move making, checks for illegal moves past just a future invalid board state
+	void UnmakeMove();			 // public wrapper that reverses the last move made
 
 	std::string ToString();
 };
